@@ -311,12 +311,17 @@ router.post("/forgot-password", async (req, res) => {
     console.log("✅ تم توليد الكود وحفظه.. جاري محاولة الإرسال...");
 
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false, // استخدم false للبورت 587 (STARTTLS)
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
-      tls: { rejectUnauthorized: false },
+      // إضافة مهلة زمنية أطول للاتصال
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
     });
 
     await transporter.sendMail({
