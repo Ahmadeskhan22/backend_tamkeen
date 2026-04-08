@@ -1,13 +1,15 @@
 ////////////////////////////
-const express = require('express');
+const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const compression = require("compression");
 const rateLimit = require("express-rate-limit");
+const nodemailer = require('nodemailer');
 require("dotenv").config();
-
+//const cors = require("cors");
+//app.use(cors());
 // ── Routes ────────────────────────────────────────────────────────────────
 // BUG FIXED: was  "./hopesteps-backend/routes/auth"
 // server.js lives INSIDE hopesteps-backend, so the correct path is "./routes/auth"
@@ -21,7 +23,7 @@ const requestRoutes = require("./hopesteps-backend/routes/requests");
 const adminRoutes = require("./hopesteps-backend/routes/admin");
 const notificationRoutes = require("./hopesteps-backend/routes/notifications");
 const app = express();
-
+app.set("trust proxy", 1);
 // ─── Security ─────────────────────────────────────────────────────────────
 app.use(
   helmet({ contentSecurityPolicy: process.env.NODE_ENV === "production" }),
@@ -136,7 +138,7 @@ app.use((err, req, res, next) => {
 
 // ─── Start server ──────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT,'0.0.0.0', () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 HopeSteps Server running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`🌐 API: http://localhost:${PORT}/api`);

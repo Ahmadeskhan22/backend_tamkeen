@@ -64,4 +64,25 @@ userSchema.methods.getSignedJwtToken = function () {
   });
 };
 
+
+
+
+userSchema.methods.getResetPasswordToken = function () {
+  // 1. توليد رقم عشوائي من 6 خانات
+  const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
+
+  // 2. تخزين الكود في الحقل الموجود أصلاً بالـ Schema
+  this.resetPasswordToken = resetToken;
+
+  // 3. تحديد وقت انتهاء (10 دقائق)
+  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+
+  return resetToken;
+};
+
+
+
+
+
+
 module.exports = mongoose.model("User", userSchema);

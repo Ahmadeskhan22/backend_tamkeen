@@ -37,7 +37,7 @@ const registerValidation = [
       minSymbols: 1,
     })
     .withMessage(
-      "كلمة السر ضعيفة! يجب أن تحتوي على 8 خانات، حرف كبير، حرف صغير، رقم، ورمز خاص (@#$)"
+      "كلمة السر ضعيفة! يجب أن تحتوي على 8 خانات، حرف كبير، حرف صغير، رقم، ورمز خاص (@#$)",
     ),
   body("role").isIn(["student", "volunteer", "donor"]),
 ];
@@ -290,44 +290,49 @@ router.put("/updatepassword", protect, async (req, res) => {
   }
 });
 
-
 router.post("/forgot-password", async (req, res) => {
-  const { email } = req.body;
-  const user = await User.findOne({ email });
-
-  if (!user) {
-    return res.status(404).json({ status: "error", message: "الإيميل غير مسجل" });
-  }
-
-  // 1. إعداد المرسل (هنا مثال باستخدام Mailtrap)
-  const transporter = nodemailer.createTransport({
-    host: "sandbox.smtp.mailtrap.io",
-    port: 2525,
-    auth: {
-      user: "YOUR_MAILTRAP_USER", // بتجيبهم من موقع mailtrap.io
-      pass: "YOUR_MAILTRAP_PASS"
-    }
-  });
-
-  // 2. محتوى الإيميل
-  const mailOptions = {
-    from: '"HopeSteps Support" <support@hopesteps.com>',
-    to: user.email,
-    subject: "استعادة كلمة المرور",
-    text: `أهلاً ${user.name}، لقد طلبت استعادة كلمة المرور. كود التحقق الخاص بك هو: 123456`,
-    html: `<b>أهلاً ${user.name}</b><p>لقد طلبت استعادة كلمة المرور لمشروع HopeSteps.</p>`
-  };
-
   try {
-    await transporter.sendMail(mailOptions);
-    res.status(200).json({ status: "success", message: "تم إرسال الإيميل بنجاح" });
+    const { email } = req.body;
+    console.log("🔍 محاولة استعادة الباسورد لـ:", email); // رح يطبع الإيميل في اللوج
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ status: "error", message: "الإيميل غير موجود" });
+    }
+
+    // توليد كود بسيط يدوي عشان نتأكد إنه المشكلة مش من الموديل
+    const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+    await user.save({ validateBeforeSave: false });
+
+    console.log("✅ تم توليد الكود وحفظه.. جاري محاولة الإرسال...");
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+      tls: { rejectUnauthorized: false },
+    });
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: "كود التحقق",
+      text: `كودك هو: ${resetToken}`,
+    });
+
+    console.log("🚀 تم إرسال الإيميل بنجاح!");
+    res.status(200).json({ status: "success", message: "وصلك الإيميل!" });
   } catch (error) {
-    res.status(500).json({ status: "error", message: "فشل إرسال الإيميل" });
+    // 🔥 هاد السطر هو "الكنز" اللي رح يحكيلنا شو المشكلة
+    console.error("❌ ERROR DETAIL:", error.message);
+    res.status(500).json({ status: "error", message: error.message });
   }
 });
-
-
-
-
 
 module.exports = router;
