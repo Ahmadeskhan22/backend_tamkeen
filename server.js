@@ -6,7 +6,7 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const compression = require("compression");
 const rateLimit = require("express-rate-limit");
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
 require("dotenv").config();
 //const cors = require("cors");
 //app.use(cors());
@@ -87,13 +87,35 @@ if (process.env.NODE_ENV === "development") {
 }
 
 // ─── Database ──────────────────────────────────────────────────────────────
-mongoose
-  .connect(process.env.MONGODB_URI || "mongodb://localhost:27017/hopesteps")
-  .then(() => console.log("✅ MongoDB Connected Successfully"))
-  .catch((err) => {
-    console.error("❌ MongoDB Connection Error:", err.message);
-    process.exit(1);
-  });
+const connectDB = async (retryCount = 0, maxRetries = 5) => {
+  try {
+    await mongoose.connect(
+      process.env.MONGODB_URI || "mongodb://localhost:27017/hopesteps",
+      {
+        serverSelectionTimeoutMS: 10000,
+        connectTimeoutMS: 10000,
+      },
+    );
+    console.log("✅ MongoDB Connected Successfully");
+  } catch (err) {
+    console.error(
+      `❌ MongoDB Connection Error (attempt ${retryCount + 1}/${maxRetries}): ${err.message}`,
+    );
+    if (retryCount < maxRetries - 1) {
+      const delay = Math.min(5000 * (retryCount + 1), 30000);
+      console.log(`🔄 Retrying in ${delay / 1000}s...`);
+      setTimeout(() => connectDB(retryCount + 1, maxRetries), delay);
+    } else {
+      console.error(
+        "⚠️  Could not connect to MongoDB. Server running without database.",
+      );
+      console.error(
+        "    → Check MONGODB_URI and ensure your IP is whitelisted in Atlas.",
+      );
+    }
+  }
+};
+connectDB();
 
 // ─── Routes ────────────────────────────────────────────────────────────────
 app.use("/api/auth", authRoutes);
