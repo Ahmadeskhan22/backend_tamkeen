@@ -7,6 +7,7 @@ const Volunteer = require("../models/Volunteer");
 const Donor = require("../models/Donor");
 const { protect } = require("../middleware/auth");
 const nodemailer = require("nodemailer");
+const crypto = require("crypto");
 // Helper: send token response
 const sendTokenResponse = (user, statusCode, res) => {
   const token = user.getSignedJwtToken();
@@ -289,7 +290,7 @@ router.put("/updatepassword", protect, async (req, res) => {
     res.status(500).json({ status: "error", message: err.message });
   }
 });
-
+/*
 router.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
@@ -330,6 +331,103 @@ router.post("/forgot-password", async (req, res) => {
   } catch (error) {
     // 🔥 هاد السطر هو "الكنز" اللي رح يحكيلنا شو المشكلة
     console.error("❌ ERROR DETAIL:", error.message);
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+*/
+// 1. طلب كود استعادة الباسورد (ببعث 6 أرقام للايميل)
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const user = await User.findOne({ email: req.body.email });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ status: "error", message: "الإيميل غير موجود" });
+    }
+
+    // توليد الكود من الموديل
+    const otp = user.getResetPasswordToken();
+    await user.save({ validateBeforeSave: false });
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: "كود إعادة تعيين كلمة المرور - HopeSteps",
+      text: `كود التحقق الخاص بك هو: ${otp}. تنتهي صلاحيته خلال 10 دقائق.`,
+    });
+
+    res
+      .status(200)
+      .json({ status: "success", message: "تم إرسال الكود للايميل" });
+  } catch (error) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// 2. تغيير الباسورد الفعلي باستخدام الكود
+// 2. تغيير الباسورد الفعلي باستخدام الكود (تم تفعيله)
+router.put("/reset-password", async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    const lowerEmail = email.toLowerCase().trim();
+
+    // 1. جلب المستخدم مع إجبار السيرفر يفرجينا الحقول المخفية باستخدام (+)
+    const user = await User.findOne({ email: lowerEmail }).select(
+      "+resetPasswordToken +resetPasswordExpire +password",
+    );
+
+    console.log("-----------------------------------------");
+    console.log("🕵️ فحص الطلب لـ:", lowerEmail);
+
+    if (!user) {
+      console.log("❌ الإيميل مش موجود أصلاً بالداتابيز");
+      return res.status(404).json({ status: "error", message: "الايميل غلط" });
+    }
+
+    // 2. طباعة القيم للمقارنة
+    const receivedOtp = otp.toString().trim();
+    const storedOtp = user.resetPasswordToken
+      ? user.resetPasswordToken.toString().trim()
+      : null;
+
+    console.log(`📥 الواصل من الموبايل: [${receivedOtp}]`);
+    console.log(`💾 المخزن بالداتابيز: [${storedOtp}]`);
+
+    // 3. التحقق من الكود
+    if (!storedOtp || receivedOtp !== storedOtp) {
+      console.log("❌ الكود ما طابق المخزن!");
+      return res.status(400).json({ status: "error", message: "الكود غلط" });
+    }
+
+    // 4. التحقق من الوقت
+    console.log("⏰ وقت السيرفر الآن:", new Date());
+    console.log("⌛ وقت انتهاء الكود :", user.resetPasswordExpire);
+
+    if (user.resetPasswordExpire < Date.now()) {
+      console.log("❌ صلاحية الكود منتهية!");
+      return res
+        .status(400)
+        .json({ status: "error", message: "تأخرت، الكود انتهى" });
+    }
+
+    // 5. التغيير الفعلي
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    console.log("✅ مبروك! الباسورد تغير بنجاح");
+    res.status(200).json({ status: "success", message: "تم التغيير بنجاح" });
+  } catch (error) {
+    console.error("🔥 خطأ في السيرفر:", error.message);
     res.status(500).json({ status: "error", message: error.message });
   }
 });

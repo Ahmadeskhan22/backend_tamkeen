@@ -90,11 +90,7 @@ if (process.env.NODE_ENV === "development") {
 const connectDB = async (retryCount = 0, maxRetries = 5) => {
   try {
     await mongoose.connect(
-      process.env.MONGODB_URI || "mongodb://localhost:27017/hopesteps",
-      {
-        serverSelectionTimeoutMS: 10000,
-        connectTimeoutMS: 10000,
-      },
+      "mongodb://ahmadmohmmafam417_db_user:zKd1CWmcgtl3s6yV@ac-lftczxz-shard-00-00.cntudye.mongodb.net:27017,ac-lftczxz-shard-00-01.cntudye.mongodb.net:27017,ac-lftczxz-shard-00-02.cntudye.mongodb.net:27017/hopesteps?ssl=true&replicaSet=atlas-534gqq-shard-0&authSource=admin",
     );
     console.log("✅ MongoDB Connected Successfully");
   } catch (err) {
@@ -156,6 +152,64 @@ app.use((err, req, res, next) => {
     message: err.message || "Internal server error",
     ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   });
+});
+//--reset password
+router.put("/api/auth/reset-password", async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    const lowerEmail = email.toLowerCase().trim();
+
+    // 1. جلب المستخدم مع إجبار السيرفر يفرجينا الحقول المخفية باستخدام (+)
+    const user = await User.findOne({ email: lowerEmail }).select(
+      "+resetPasswordToken +resetPasswordExpire +password",
+    );
+
+    console.log("-----------------------------------------");
+    console.log("🕵️ فحص الطلب لـ:", lowerEmail);
+
+    if (!user) {
+      console.log("❌ الإيميل مش موجود أصلاً بالداتابيز");
+      return res.status(404).json({ status: "error", message: "الايميل غلط" });
+    }
+
+    // 2. طباعة القيم للمقارنة (عشان نشوف لو في فراغات أو نوع البيانات غلط)
+    const receivedOtp = otp.toString().trim();
+    const storedOtp = user.resetPasswordToken
+      ? user.resetPasswordToken.toString().trim()
+      : null;
+
+    console.log(`📥 الواصل من الموبايل: [${receivedOtp}]`);
+    console.log(`💾 المخزن بالداتابيز: [${storedOtp}]`);
+
+    // 3. التحقق من الكود
+    if (!storedOtp || receivedOtp !== storedOtp) {
+      console.log("❌ الكود ما طابق المخزن!");
+      return res.status(400).json({ status: "error", message: "الكود غلط" });
+    }
+
+    // 4. التحقق من الوقت
+    console.log("⏰ وقت السيرفر الآن:", new Date());
+    console.log("⌛ وقت انتهاء الكود :", user.resetPasswordExpire);
+
+    if (user.resetPasswordExpire < Date.now()) {
+      console.log("❌ صلاحية الكود منتهية!");
+      return res
+        .status(400)
+        .json({ status: "error", message: "تأخرت، الكود انتهى" });
+    }
+
+    // 5. التغيير الفعلي
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    console.log("✅ مبروك! الباسورد تغير بنجاح");
+    res.status(200).json({ status: "success", message: "تم التغيير بنجاح" });
+  } catch (error) {
+    console.error("🔥 خطأ في السيرفر:", error.message);
+    res.status(500).json({ status: "error", message: error.message });
+  }
 });
 
 // ─── Start server ──────────────────────────────────────────────────────────

@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters"],
-      select: false,
+      select: false, // لا يظهر في الاستعلامات العادية للحماية
     },
     role: {
       type: String,
@@ -34,55 +34,52 @@ const userSchema = new mongoose.Schema(
     avatar: { type: String },
     isActive: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
+
+    // حقول استعادة كلمة السر (OTP)
     resetPasswordToken: String,
     resetPasswordExpire: Date,
+
     lastLogin: Date,
   },
   { timestamps: true },
 );
 
-// Hash password before saving
-userSchema.pre("save", async function () {
-  if (!this.isModified("password")) return;
+// تشفير كلمة السر قبل الحفظ
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
 
   try {
-    this.password = await bcrypt.hash(this.password, 12);
+    const salt = await bcrypt.genSalt(12);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
   } catch (err) {
-    throw new Error(err);
+    next(err);
   }
 });
 
-// Compare passwords
+// مقارنة كلمة السر عند تسجيل الدخول
 userSchema.methods.matchPassword = async function (enteredPassword) {
-  return bcrypt.compare(enteredPassword, this.password);
+  return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Generate JWT token
+// إنشاء توكن JWT للجلسة
 userSchema.methods.getSignedJwtToken = function () {
   return jwt.sign({ id: this._id, role: this.role }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || "7d",
   });
 };
 
-
-
-
+// --- دالة توليد كود الـ 6 أرقام (OTP) ---
 userSchema.methods.getResetPasswordToken = function () {
   // 1. توليد رقم عشوائي من 6 خانات
   const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
 
-  // 2. تخزين الكود في الحقل الموجود أصلاً بالـ Schema
+  // 2. تخزين الكود في الداتابيز
   this.resetPasswordToken = resetToken;
 
-  // 3. تحديد وقت انتهاء (10 دقائق)
-  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+  this.resetPasswordExpire = Date.now() + 120 * 60 * 1000;
 
   return resetToken;
 };
-
-
-
-
-
 
 module.exports = mongoose.model("User", userSchema);
