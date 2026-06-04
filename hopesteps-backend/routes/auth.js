@@ -374,61 +374,51 @@ router.post("/forgot-password", async (req, res) => {
 
 // 2. تغيير الباسورد الفعلي باستخدام الكود
 // 2. تغيير الباسورد الفعلي باستخدام الكود (تم تفعيله)
+// ─── مسار تغيير كلمة المرور ────────────────────────────────────────────────
 router.put("/reset-password", async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
     const lowerEmail = email.toLowerCase().trim();
 
-    // 1. جلب المستخدم مع إجبار السيرفر يفرجينا الحقول المخفية باستخدام (+)
+    // جلب المستخدم مع الحقول المخفية (مثل كلمة المرور القديمة وكود التوكن)
     const user = await User.findOne({ email: lowerEmail }).select(
-      "+resetPasswordToken +resetPasswordExpire +password",
+      "+resetPasswordToken +resetPasswordExpire +password"
     );
 
     console.log("-----------------------------------------");
-    console.log("🕵️ فحص الطلب لـ:", lowerEmail);
+    console.log("🕵️ طلب تغيير الباسورد وصل لملف Auth بنجاح!");
 
     if (!user) {
-      console.log("❌ الإيميل مش موجود أصلاً بالداتابيز");
-      return res.status(404).json({ status: "error", message: "الايميل غلط" });
+      console.log("❌ الإيميل مش موجود بالداتابيز");
+      return res.status(404).json({ status: "error", message: "الايميل غير صحيح" });
     }
 
-    // 2. طباعة القيم للمقارنة
+    // تحويل الكودين إلى نصوص لضمان المطابقة 100%
     const receivedOtp = otp.toString().trim();
-    const storedOtp = user.resetPasswordToken
-      ? user.resetPasswordToken.toString().trim()
-      : null;
+    const storedOtp = user.resetPasswordToken ? user.resetPasswordToken.toString().trim() : null;
 
-    console.log(`📥 الواصل من الموبايل: [${receivedOtp}]`);
-    console.log(`💾 المخزن بالداتابيز: [${storedOtp}]`);
-
-    // 3. التحقق من الكود
     if (!storedOtp || receivedOtp !== storedOtp) {
-      console.log("❌ الكود ما طابق المخزن!");
-      return res.status(400).json({ status: "error", message: "الكود غلط" });
+      console.log(`❌ الكود غلط! واصل من الموبايل: [${receivedOtp}], مخزن بالسيرفر: [${storedOtp}]`);
+      return res.status(400).json({ status: "error", message: "الكود غير صحيح" });
     }
-
-    // 4. التحقق من الوقت
-    console.log("⏰ وقت السيرفر الآن:", new Date());
-    console.log("⌛ وقت انتهاء الكود :", user.resetPasswordExpire);
 
     if (user.resetPasswordExpire < Date.now()) {
       console.log("❌ صلاحية الكود منتهية!");
-      return res
-        .status(400)
-        .json({ status: "error", message: "تأخرت، الكود انتهى" });
+      return res.status(400).json({ status: "error", message: "انتهت صلاحية الكود، اطلب كود جديد" });
     }
 
-    // 5. التغيير الفعلي
+    // حفظ الباسورد الجديد ومسح الكود القديم
     user.password = newPassword;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     await user.save();
 
-    console.log("✅ مبروك! الباسورد تغير بنجاح");
-    res.status(200).json({ status: "success", message: "تم التغيير بنجاح" });
+    console.log("✅ مبروك! الباسورد تغير بنجاح في قاعدة البيانات");
+    res.status(200).json({ status: "success", message: "تم تغيير كلمة المرور بنجاح" });
+
   } catch (error) {
     console.error("🔥 خطأ في السيرفر:", error.message);
-    res.status(500).json({ status: "error", message: error.message });
+    res.status(500).json({ status: "error", message: "حدث خطأ في السيرفر" });
   }
 });
 
