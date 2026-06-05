@@ -12,6 +12,15 @@ const donorSchema = new mongoose.Schema(
     isOrganization: { type: Boolean, default: false },
     country: { type: String, trim: true },
     city: { type: String, trim: true },
+    
+    // ✅ التعديل الصحيح: مصفوفة لحفظ سجل التبرعات السريعة (ليتمكن من التبرع أكثر من مرة)
+    quickPledges: [
+      {
+        pledgeType: { type: String, required: true },
+        date: { type: Date, default: Date.now }
+      }
+    ],
+
     totalDonated: { type: Number, default: 0 },
     currency: { type: String, default: "USD" },
     donations: [

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Donor = require("../models/Donor");
 const Request = require("../models/Request");
+const Pledge = require("../models/Pledge");
 const Notification = require("../models/Notification");
 const { protect, authorize } = require("../middleware/auth");
 
@@ -10,16 +11,29 @@ const { protect, authorize } = require("../middleware/auth");
 // @access  Private (donor)
 router.post("/pledge", protect, authorize("donor"), async (req, res) => {
   try {
-    const { pledgeType, description } = req.body;
+    const { pledgeType } = req.body; 
 
-    // بما أن هذا تبرع عيني (أدوات، ملابس، كفالة)، سنكتفي بإرجاع رسالة نجاح
-    // ليتفاعل معها تطبيق الفلاتر وتظهر للمستخدم. (يمكن مستقبلاً حفظها في جدول منفصل)
+    if (!pledgeType) {
+      return res.status(400).json({
+        status: "error",
+        message: "الرجاء تحديد نوع التبرع",
+      });
+    }
+
+    // إنشاء سجل تبرع جديد ومستقل في الداتابيز
+    const newPledge = await Pledge.create({
+      donor: req.user._id, // بنربط الطلب بحساب المستخدم الحالي
+      pledgeType: pledgeType
+    });
+
     res.status(200).json({
       status: "success",
-      message: `تم استلام طلب التبرع بـ (${pledgeType}) بنجاح! سنتواصل معك قريباً.`,
+      message: `تم تسجيل رغبتك بـ (${pledgeType}) بنجاح! 🌟`,
     });
+
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    console.error("🔥 خطأ في تسجيل التبرع:", err);
+    res.status(500).json({ status: "error", message: "حدث خطأ في السيرفر" });
   }
 });
 

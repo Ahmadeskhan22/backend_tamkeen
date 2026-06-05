@@ -90,6 +90,7 @@ router.put("/:id/approve", protect, authorize("admin"), async (req, res) => {
 // @route   POST /api/volunteers
 // @desc    Create a volunteer profile for the logged-in user
 // @access  Private (Any logged-in user can apply to be a volunteer)
+
 router.post("/", protect, async (req, res) => {
   try {
     // 1. التأكد أن المستخدم ليس لديه ملف متطوع مسبقاً
@@ -97,41 +98,36 @@ router.post("/", protect, async (req, res) => {
     if (volunteer) {
       return res.status(400).json({ 
         status: "error", 
-        message: "You already have a volunteer profile" 
+        message: "أنت مسجل كمتطوع مسبقاً" 
       });
     }
 
-    // 2. استخراج البيانات من الطلب (اللي رح يبعثها الفلاتر)
-    const { 
-      skills, 
-      availability, 
-      languages, 
-      country, 
-      city, 
-      bio, 
-      specializations 
-    } = req.body;
+    // 2. استخراج الخيارات السريعة من الطلب (فلاتر سيبعث مصفوفة interests)
+    const { interests } = req.body;
 
-    // 3. إنشاء ملف المتطوع وربطه بحساب المستخدم الحالي
+    // التحقق من أن المستخدم اختار مجالاً واحداً على الأقل
+    if (!interests || !Array.isArray(interests) || interests.length === 0) {
+      return res.status(400).json({
+        status: "error",
+        message: "الرجاء اختيار مجال تطوع واحد على الأقل"
+      });
+    }
+
+    // 3. إنشاء ملف المتطوع السريع
+    // سنضع مصفوفة الخيارات داخل specializations، ونتجاهل الحقول المعقدة القديمة
     volunteer = await Volunteer.create({
       user: req.user._id,
-      skills,
-      availability,
-      languages,
-      country,
-      city,
-      bio,
-      specializations
+      specializations: interests, // تخزين الخيارات هنا
+      isApproved: true // (اختياري) خليتها true عشان يتفعل حسابه فوراً بدون انتظار أدمن
     });
 
     res.status(201).json({ 
       status: "success", 
-      message: "تم استلام طلب التطوع بنجاح، بانتظار موافقة الإدارة", 
+      message: "تم تسجيلك كمتطوع بنجاح! شكراً لعطائك 🌟", 
       data: volunteer 
     });
   } catch (err) {
     res.status(500).json({ status: "error", message: err.message });
   }
 });
-
 module.exports = router;
