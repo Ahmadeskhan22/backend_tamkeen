@@ -1,701 +1,553 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>لوحة إدارة HopeSteps</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      :root {
-        color-scheme: dark;
-      }
-      body {
-        background: #f4f6f9;
-        color: #1f2937;
-        min-height: 100vh;
-      }
-      .glass-card {
-        background: rgba(255, 255, 255, 0.74);
-        backdrop-filter: blur(18px);
-        box-shadow: 0 24px 60px rgba(76, 29, 149, 0.14);
-      }
-      .badge-pending {
-        background: rgba(249, 115, 22, 0.12);
-        color: #c2410c;
-      }
-      .badge-completed {
-        background: rgba(16, 185, 129, 0.12);
-        color: #047857;
-      }
-      .badge-review {
-        background: rgba(59, 130, 246, 0.12);
-        color: #1d4ed8;
-      }
-      .scrollbar-thin::-webkit-scrollbar {
-        width: 6px;
-      }
-      .scrollbar-thin::-webkit-scrollbar-thumb {
-        background: rgba(76, 29, 149, 0.25);
-        border-radius: 9999px;
-      }
-    </style>
-  </head>
-  <body class="font-sans antialiased">
-    <div class="min-h-screen bg-[#F4F6F9] text-slate-900">
-      <div class="flex min-h-screen flex-col md:flex-row">
-        <aside
-          class="w-full border-b border-slate-200 bg-white/80 glass-card md:w-72 md:min-h-screen md:border-r md:border-b-0"
-        >
-          <div class="mx-6 mt-6 flex items-center justify-between gap-3">
-            <div>
-              <p class="text-xs uppercase tracking-[0.24em] text-slate-400">
-                HopeSteps
-              </p>
-              <h1 class="text-2xl font-semibold text-[#4C1D95]">
-                لوحة الإدارة
-              </h1>
-            </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لوحة إدارة تمكين</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #f4f6f9; font-family: system-ui, sans-serif; }
+    .card { background: #fff; border-radius: 20px; border: 1px solid #e8e5f4; }
+    .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 600; }
+    .badge-pending   { background: #fff3e0; color: #c2410c; }
+    .badge-fulfilled { background: #e6f4ea; color: #047857; }
+    .badge-approved  { background: #e8f0fe; color: #1d4ed8; }
+    .badge-rejected  { background: #fde8e8; color: #991b1b; }
+    .badge-other     { background: #f1f0fb; color: #4c1d95; }
+    .stat-value { font-size: 28px; font-weight: 700; color: #1e1b4b; }
+    .stat-label { font-size: 13px; color: #6b7280; }
+    .nav-link { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; font-size: 14px; color: #374151; cursor: pointer; text-decoration: none; }
+    .nav-link:hover, .nav-link.active { background: #ede9fe; color: #4c1d95; }
+    .section { display: none; }
+    .section.active { display: block; }
+    input, select { outline: none; transition: border-color .2s; }
+    input:focus, select:focus { border-color: #4c1d95 !important; }
+    .btn-primary { background: #4c1d95; color: #fff; border: none; border-radius: 10px; padding: 9px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-primary:hover { background: #3b1578; }
+    .btn-outline { background: transparent; border: 1px solid #d1d5db; border-radius: 10px; padding: 7px 14px; font-size: 13px; cursor: pointer; color: #374151; }
+    .btn-outline:hover { background: #f3f4f6; }
+    .btn-approve { background: #4c1d95; color: #fff; border: none; border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+    .btn-reject  { background: transparent; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: #6b7280; }
+    .spinner { border: 3px solid #e5e7eb; border-top-color: #4c1d95; border-radius: 50%; width: 22px; height: 22px; animation: spin .7s linear infinite; margin: 0 auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    table { border-collapse: collapse; width: 100%; }
+    th { text-align: right; font-size: 12px; color: #6b7280; font-weight: 600; padding: 10px 14px; background: #f9fafb; }
+    td { padding: 12px 14px; font-size: 14px; border-top: 1px solid #f3f4f6; }
+    tr:hover td { background: #fafafa; }
+    .db-status { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 6px; }
+    .db-ok  { background: #22c55e; }
+    .db-err { background: #ef4444; }
+    #toastEl { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 12px; font-size: 14px; font-weight: 600; color: #fff; z-index: 9999; display: none; }
+    .toast-ok  { background: #047857; }
+    .toast-err { background: #b91c1c; }
+  </style>
+</head>
+<body>
+
+<div id="toastEl"></div>
+
+<!-- ─── LAYOUT ──────────────────────────────────────────────── -->
+<div class="flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <aside style="width:240px;min-height:100vh;background:#fff;border-left:1px solid #ede9fe;padding:24px 12px;display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+    <div style="padding:0 8px 20px;">
+      <p style="font-size:11px;color:#9ca3af;letter-spacing:.12em;">TAMKEEN</p>
+      <h1 style="font-size:20px;font-weight:700;color:#4c1d95;margin:4px 0 0;">لوحة الإدارة</h1>
+    </div>
+
+    <a class="nav-link active" data-section="overview" onclick="showSection('overview',this)">🏠 نظرة عامة</a>
+    <a class="nav-link" data-section="requests"  onclick="showSection('requests',this)">📩 الطلبات</a>
+    <a class="nav-link" data-section="volunteers" onclick="showSection('volunteers',this)">🙌 المتطوعون</a>
+    <a class="nav-link" data-section="pledges"    onclick="showSection('pledges',this)">💰 التبرعات</a>
+    <a class="nav-link" data-section="users"      onclick="showSection('users',this)">🎓 المستخدمون</a>
+
+    <div style="flex:1;"></div>
+
+    <!-- DB STATUS -->
+    <div style="padding:10px 8px;font-size:12px;color:#6b7280;">
+      قاعدة البيانات
+      <span class="db-status db-err" id="dbDot" title="جارٍ التحقق..."></span>
+      <span id="dbLabel">—</span>
+    </div>
+
+    <button class="btn-outline" onclick="doLogout()" style="width:100%;">تسجيل الخروج</button>
+  </aside>
+
+  <!-- MAIN -->
+  <main style="flex:1;padding:28px;overflow-y:auto;">
+
+    <!-- ── TOP BAR ── -->
+    <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+      <div>
+        <p style="font-size:13px;color:#6b7280;">مرحباً بك</p>
+        <h2 style="font-size:22px;font-weight:700;margin:0;color:#111827;">إدارة منصة تمكين الاجتماعي</h2>
+      </div>
+      <div style="font-size:13px;color:#6b7280;" id="loggedInUser">غير مسجّل</div>
+    </header>
+
+    <!-- ── LOGIN PANEL (shown when not authenticated) ── -->
+    <div id="loginPanel" class="card" style="max-width:460px;margin:0 auto;padding:28px;">
+      <h3 style="font-size:16px;font-weight:700;margin:0 0 20px;color:#111827;">تسجيل دخول المشرف</h3>
+
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <input id="loginEmail"    type="email"    placeholder="البريد الإلكتروني"
+               style="padding:10px 14px;border:1px solid #d1d5db;border-radius:10px;font-size:14px;width:100%;box-sizing:border-box;" />
+        <input id="loginPassword" type="password" placeholder="كلمة المرور"
+               style="padding:10px 14px;border:1px solid #d1d5db;border-radius:10px;font-size:14px;width:100%;box-sizing:border-box;" />
+
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button class="btn-primary" onclick="loginAdmin()" id="loginBtn" style="flex:1;">دخول</button>
+        </div>
+
+        <div style="border-top:1px solid #f3f4f6;padding-top:12px;">
+          <p style="font-size:12px;color:#9ca3af;margin:0 0 8px;">أو أدخل JWT مباشرة:</p>
+          <div style="display:flex;gap:8px;">
+            <input id="jwtInput" type="text" placeholder="Bearer token…"
+                   style="flex:1;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:12px;" />
+            <button class="btn-outline" onclick="saveJwt()" style="white-space:nowrap;">حفظ</button>
           </div>
-          <nav class="mt-10 space-y-1 px-4 pb-8">
-            <a
-              href="#"
-              class="flex items-center gap-3 rounded-3xl px-4 py-3 text-sm font-medium text-[#4C1D95] shadow-sm shadow-[#4C1D95]/10 transition hover:bg-[#4C1D95]/5"
-            >
-              <span
-                class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#4C1D95]/10 text-[#4C1D95]"
-                >🏠</span
-              >
-              نظرة عامة
-            </a>
-            <a
-              href="#pledges"
-              class="flex items-center gap-3 rounded-3xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-            >
-              <span
-                class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#4C1D95]/10 text-[#4C1D95]"
-                >🤝</span
-              >
-              تعهدات التبرع
-            </a>
-            <a
-              href="#volunteers"
-              class="flex items-center gap-3 rounded-3xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-            >
-              <span
-                class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#4C1D95]/10 text-[#4C1D95]"
-                >🧑‍🤝‍🧑</span
-              >
-              إدارة المتطوعين
-            </a>
-            <a
-              href="#students"
-              class="flex items-center gap-3 rounded-3xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-            >
-              <span
-                class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#4C1D95]/10 text-[#4C1D95]"
-                >🎓</span
-              >
-              الطلاب والطلبات
-            </a>
-            <div
-              class="mt-6 rounded-3xl bg-[#4C1D95] px-4 py-5 text-white shadow-[#4C1D95]/20"
-            >
-              <p class="text-sm font-medium opacity-90">إعدادات أساسية</p>
-              <p class="mt-3 text-xs leading-5 text-slate-200/90">
-                قم بإدارة سياسة المنصة وحسابات المشرفين.
-              </p>
-            </div>
-            <button
-              class="mt-5 w-full rounded-3xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-            >
-              تسجيل الخروج
-            </button>
-          </nav>
-        </aside>
+        </div>
 
-        <main class="flex-1 p-6 md:p-8">
-          <header
-            class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div>
-              <p class="text-sm text-slate-500">مرحباً بك في لوحة التحكم</p>
-              <h2 class="mt-1 text-3xl font-semibold text-slate-900">
-                إدارة منصة تمكين الاجتماعي
-              </h2>
-            </div>
-            <div
-              class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-end"
-            >
-              <div class="relative w-full sm:w-80">
-                <span
-                  class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400"
-                  >🔍</span
-                >
-                <input
-                  type="search"
-                  placeholder="ابحث في الطلبات أو المتطوعين"
-                  class="w-full rounded-3xl border border-slate-200 bg-white/90 py-3 pr-12 pl-5 text-sm shadow-sm outline-none transition focus:border-[#4C1D95] focus:ring-2 focus:ring-[#4C1D95]/15"
-                />
-              </div>
-              <div
-                class="flex items-center gap-3 rounded-3xl bg-white/90 px-4 py-3 shadow-sm shadow-slate-200/70"
-              >
-                <button
-                  class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 transition hover:bg-[#4C1D95]/10 hover:text-[#4C1D95]"
-                >
-                  🔔
-                </button>
-                <div class="flex items-center gap-3">
-                  <img
-                    src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=facearea&facepad=3&w=64&h=64&q=80"
-                    alt="Admin avatar"
-                    class="h-12 w-12 rounded-3xl border border-white object-cover shadow-sm"
-                  />
-                  <div>
-                    <p class="text-sm font-semibold text-slate-900">
-                      مدير المنصة
-                    </p>
-                    <p class="text-xs text-slate-500">hope.steps@admin.com</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </header>
-
-          <section
-            class="mt-6 rounded-[28px] border border-[#4C1D95]/10 bg-white/90 p-5 shadow-sm shadow-[#4C1D95]/10"
-          >
-            <div
-              class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div>
-                <p class="text-sm font-semibold text-slate-900">
-                  تكامل الخلفية
-                </p>
-                <p class="text-sm text-slate-500">
-                  ضع رمز JWT المسؤول لتفعيل طلبات API المحمية من لوحة الإدارة.
-                </p>
-              </div>
-              <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <input
-                  id="adminTokenInput"
-                  type="text"
-                  placeholder="أدخل رمز JWT هنا"
-                  class="min-w-[260px] rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
-                />
-                <button
-                  id="saveTokenButton"
-                  class="rounded-3xl bg-[#4C1D95] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#422273]"
-                >
-                  حفظ التوكن
-                </button>
-              </div>
-            </div>
-            <p id="adminTokenSaved" class="mt-3 text-xs text-[#4C1D95]">
-              إذا تم حفظ التوكن، سيستخدم للمكالمات إلى الـ API.
-            </p>
-            <div
-              id="dashboardError"
-              class="mt-4 hidden rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
-            ></div>
-          </section>
-
-          <section class="mt-8 grid gap-5 xl:grid-cols-4 lg:grid-cols-2">
-            <article
-              class="glass-card rounded-[32px] border border-white/80 p-6 shadow-xl shadow-[#4C1D95]/10"
-            >
-              <div class="flex items-center justify-between gap-4">
-                <div>
-                  <p class="text-sm text-slate-500">إجمالي التبرعات</p>
-                  <h3
-                    id="totalDonationsValue"
-                    class="mt-3 text-3xl font-semibold text-slate-900"
-                  >
-                    —
-                  </h3>
-                </div>
-                <div
-                  class="flex h-12 w-12 items-center justify-center rounded-3xl bg-[#4C1D95]/10 text-[#4C1D95]"
-                >
-                  💰
-                </div>
-              </div>
-              <div
-                class="mt-6 flex items-center justify-between gap-4 text-sm text-slate-500"
-              >
-                <span id="donationsTrend">جارٍ التحميل...</span>
-                <span
-                  id="donationsTrendLabel"
-                  class="rounded-full bg-[#D8B4FE]/30 px-3 py-1 text-[#6D28D9]"
-                  >—</span
-                >
-              </div>
-            </article>
-
-            <article
-              class="glass-card rounded-[32px] border border-white/80 p-6 shadow-xl shadow-[#4C1D95]/10"
-            >
-              <div class="flex items-center justify-between gap-4">
-                <div>
-                  <p class="text-sm text-slate-500">المتطوعون النشطون</p>
-                  <h3
-                    id="activeVolunteersValue"
-                    class="mt-3 text-3xl font-semibold text-slate-900"
-                  >
-                    —
-                  </h3>
-                </div>
-                <div
-                  class="flex h-12 w-12 items-center justify-center rounded-3xl bg-[#4C1D95]/10 text-[#4C1D95]"
-                >
-                  🧑‍🤝‍🧑
-                </div>
-              </div>
-              <div
-                class="mt-6 flex items-center justify-between gap-4 text-sm text-slate-500"
-              >
-                <span id="volunteersTrend">جارٍ التحميل...</span>
-                <span
-                  id="volunteersTrendLabel"
-                  class="rounded-full bg-[#A5F3FC]/30 px-3 py-1 text-[#0E7490]"
-                  >—</span
-                >
-              </div>
-            </article>
-
-            <article
-              class="glass-card rounded-[32px] border border-white/80 p-6 shadow-xl shadow-[#4C1D95]/10"
-            >
-              <div class="flex items-center justify-between gap-4">
-                <div>
-                  <p class="text-sm text-slate-500">الطلبات المعلقة</p>
-                  <h3
-                    id="pendingRequestsValue"
-                    class="mt-3 text-3xl font-semibold text-slate-900"
-                  >
-                    —
-                  </h3>
-                </div>
-                <div
-                  class="flex h-12 w-12 items-center justify-center rounded-3xl bg-[#4C1D95]/10 text-[#4C1D95]"
-                >
-                  📩
-                </div>
-              </div>
-              <div
-                class="mt-6 flex items-center justify-between gap-4 text-sm text-slate-500"
-              >
-                <span id="requestsTrend">جارٍ التحميل...</span>
-                <span
-                  id="requestsTrendLabel"
-                  class="rounded-full bg-[#FBCFE8]/30 px-3 py-1 text-[#BE185D]"
-                  >—</span
-                >
-              </div>
-            </article>
-
-            <article
-              class="glass-card rounded-[32px] border border-white/80 p-6 shadow-xl shadow-[#4C1D95]/10"
-            >
-              <div class="flex items-center justify-between gap-4">
-                <div>
-                  <p class="text-sm text-slate-500">إجمالي الطلاب</p>
-                  <h3
-                    id="totalStudentsValue"
-                    class="mt-3 text-3xl font-semibold text-slate-900"
-                  >
-                    —
-                  </h3>
-                </div>
-                <div
-                  class="flex h-12 w-12 items-center justify-center rounded-3xl bg-[#4C1D95]/10 text-[#4C1D95]"
-                >
-                  🎓
-                </div>
-              </div>
-              <div
-                class="mt-6 flex items-center justify-between gap-4 text-sm text-slate-500"
-              >
-                <span id="studentsTrend">جارٍ التحميل...</span>
-                <span
-                  id="studentsTrendLabel"
-                  class="rounded-full bg-[#D9F99D]/30 px-3 py-1 text-[#3F6212]"
-                  >—</span
-                >
-              </div>
-            </article>
-          </section>
-
-          <section class="mt-10 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-            <div
-              class="glass-card rounded-[32px] border border-white/80 p-6 shadow-xl shadow-[#4C1D95]/10"
-            >
-              <div
-                class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div>
-                  <h3 class="text-xl font-semibold text-slate-900">
-                    التعهدات الأخيرة
-                  </h3>
-                  <p class="text-sm text-slate-500">
-                    نظرة سريعة على تعهدات المتبرعين الحديثة.
-                  </p>
-                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                      <input
-                        id="adminTokenInput"
-                        type="text"
-                        placeholder="أدخل رمز JWT هنا (أو سجل الدخول أدناه)"
-                        class="min-w-[260px] rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
-                      />
-                      <button
-                        id="saveTokenButton"
-                        class="rounded-3xl bg-[#4C1D95] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#422273]"
-                      >
-                        حفظ التوكن
-                      </button>
-                    </div>
-                    <div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:items-center">
-                      <input id="loginEmail" type="email" placeholder="بريد المشرف" class="rounded-3xl border border-slate-200 px-4 py-2 text-sm" />
-                      <input id="loginPassword" type="password" placeholder="كلمة المرور" class="rounded-3xl border border-slate-200 px-4 py-2 text-sm" />
-                      <button id="loginButton" class="rounded-3xl bg-[#6b21a8] px-4 py-2 text-sm font-semibold text-white">تسجيل دخول</button>
-                  <thead class="bg-slate-50 text-slate-500">
-                    <tr>
-                      <th class="whitespace-nowrap px-6 py-4 font-medium">
-                        اسم المتبرع
-                      </th>
-                      <th class="whitespace-nowrap px-6 py-4 font-medium">
-                        نوع التعهد
-                      </th>
-                      <th class="whitespace-nowrap px-6 py-4 font-medium">
-                        التاريخ
-                      </th>
-                      <th class="whitespace-nowrap px-6 py-4 font-medium">
-                        الحالة
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody
-                    id="recentPledgesBody"
-                    class="divide-y divide-slate-200 bg-white"
-                  >
-                    <tr>
-                      <td
-                        colspan="4"
-                        class="px-6 py-8 text-center text-sm text-slate-500"
-                      >
-                        جارٍ تحميل التعهدات...
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div
-              class="glass-card rounded-[32px] border border-white/80 p-6 shadow-xl shadow-[#4C1D95]/10"
-            >
-              <div
-                class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div>
-                  <h3 class="text-xl font-semibold text-slate-900">
-                    موافقات المتطوعين
-                  </h3>
-                  <p class="text-sm text-slate-500">
-                    راقب طلبات الانضمام وسجل المصادقات.
-                  </p>
-                </div>
-                <div
-                  class="inline-flex rounded-full bg-[#EDE9FE] px-3 py-2 text-xs font-semibold text-[#5b21b6]"
-                >
-                  4 طلبات جديدة
-                </div>
-              </div>
-              <div id="volunteerApprovalsBody" class="mt-6 space-y-4">
-                <div
-                  class="rounded-[28px] border border-slate-200 bg-white/90 p-6 text-center text-sm text-slate-500 shadow-sm"
-                >
-                  لا توجد طلبات موافقة متاحة حالياً أو جارٍ التحميل...
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <footer
-            class="mt-10 rounded-[32px] border border-slate-200 bg-white/90 p-6 shadow-sm shadow-slate-200/50"
-          >
-            <div
-              class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <p class="text-sm text-slate-500">Tamkeen © 2026. منصة تمكين .</p>
-              <div class="flex flex-wrap gap-4 text-sm text-slate-500">
-                <a href="#" class="transition hover:text-[#4C1D95]">الخصوصية</a>
-                <a href="#" class="transition hover:text-[#4C1D95]">الشروط</a>
-                <a href="#" class="transition hover:text-[#4C1D95]">الدعم</a>
-              </div>
-            </div>
-          </footer>
-        </main>
+        <div id="loginError" style="display:none;background:#fde8e8;color:#991b1b;padding:10px 14px;border-radius:10px;font-size:13px;"></div>
       </div>
     </div>
-    <script>
-      // Use the current site origin so the dashboard works when served from the deployed server
-   const API_HOST = "https://c32f123d-d954-4621-9d77-eac0252166b3-00-vgqwdfdy9utr.pike.replit.dev";
-const API_BASE = `${API_HOST}/api`;
-      const authTokenInput = document.getElementById("adminTokenInput");
-      const saveTokenButton = document.getElementById("saveTokenButton");
-        const loginEmail = document.getElementById('loginEmail');
-        const loginPassword = document.getElementById('loginPassword');
-        const loginButton = document.getElementById('loginButton');
-      const tokenSavedLabel = document.getElementById("adminTokenSaved");
-      const errorBanner = document.getElementById("dashboardError");
-      const totalDonationsValue = document.getElementById(
-        "totalDonationsValue",
-      );
-      const donationsTrend = document.getElementById("donationsTrend");
-      const donationsTrendLabel = document.getElementById(
-        "donationsTrendLabel",
-      );
-      const activeVolunteersValue = document.getElementById(
-        "activeVolunteersValue",
-      );
-      const volunteersTrend = document.getElementById("volunteersTrend");
-      const volunteersTrendLabel = document.getElementById(
-        "volunteersTrendLabel",
-      );
-      const pendingRequestsValue = document.getElementById(
-        "pendingRequestsValue",
-      );
-      const requestsTrend = document.getElementById("requestsTrend");
-      const requestsTrendLabel = document.getElementById("requestsTrendLabel");
-      const totalStudentsValue = document.getElementById("totalStudentsValue");
-      const studentsTrend = document.getElementById("studentsTrend");
-      const studentsTrendLabel = document.getElementById("studentsTrendLabel");
-      const recentPledgesBody = document.getElementById("recentPledgesBody");
-      const volunteerApprovalsBody = document.getElementById(
-        "volunteerApprovalsBody",
-      );
 
-      let AUTH_TOKEN = localStorage.getItem("hopesteps_admin_token") || "";
+    <!-- ── DASHBOARD CONTENT (hidden until logged in) ── -->
+    <div id="dashContent" style="display:none;">
 
-      if (AUTH_TOKEN) {
-        tokenSavedLabel.textContent = "تم تحميل التوكن من التخزين المحلي.";
-      }
+      <!-- ── OVERVIEW ── -->
+      <div id="sec-overview" class="section active">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px;">
+          <div class="card" style="padding:20px;">
+            <div class="stat-label">إجمالي الطلاب</div>
+            <div class="stat-value" id="s-students">—</div>
+          </div>
+          <div class="card" style="padding:20px;">
+            <div class="stat-label">المتطوعون</div>
+            <div class="stat-value" id="s-volunteers">—</div>
+          </div>
+          <div class="card" style="padding:20px;">
+            <div class="stat-label">المتبرعون</div>
+            <div class="stat-value" id="s-donors">—</div>
+          </div>
+          <div class="card" style="padding:20px;">
+            <div class="stat-label">طلبات معلقة</div>
+            <div class="stat-value" id="s-pending">—</div>
+          </div>
+          <div class="card" style="padding:20px;">
+            <div class="stat-label">طلبات مكتملة</div>
+            <div class="stat-value" id="s-fulfilled">—</div>
+          </div>
+          <div class="card" style="padding:20px;">
+            <div class="stat-label">التبرعات ($)</div>
+            <div class="stat-value" id="s-donations">—</div>
+          </div>
+        </div>
 
-      const endpoints = {
-        dashboard: "/admin/dashboard",
-        pledges: "/admin/pledges?limit=5",
-        volunteerRequests: "/admin/volunteer-requests?limit=5",
-        students: "/students?limit=5",
-        donors: "/donors?limit=5",
-      };
+        <div class="card" style="padding:20px;">
+          <h3 style="font-size:15px;font-weight:700;margin:0 0 16px;">آخر 10 طلبات</h3>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead><tr><th>العنوان</th><th>النوع</th><th>الحالة</th><th>الأولوية</th><th>التاريخ</th><th>إجراء</th></tr></thead>
+              <tbody id="recentRequestsBody"><tr><td colspan="6" style="text-align:center;padding:24px;color:#9ca3af;"><div class="spinner"></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
-      function getHeaders() {
-        const headers = { "Content-Type": "application/json" };
-        if (AUTH_TOKEN) {
-          headers["Authorization"] = `Bearer ${AUTH_TOKEN}`;
-        }
-        return headers;
-      }
+      <!-- ── REQUESTS ── -->
+      <div id="sec-requests" class="section">
+        <div style="display:flex;gap:10px;margin-bottom:18px;">
+          <select id="filterStatus" onchange="loadRequests()" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            <option value="">كل الحالات</option>
+            <option value="pending">معلق</option>
+            <option value="approved">موافق</option>
+            <option value="in_progress">جارٍ</option>
+            <option value="fulfilled">مكتمل</option>
+            <option value="rejected">مرفوض</option>
+          </select>
+          <select id="filterType" onchange="loadRequests()" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            <option value="">كل الأنواع</option>
+            <option value="tutoring">دروس تطوعية</option>
+            <option value="psychological">دعم نفسي</option>
+            <option value="stationery">أدوات مدرسية</option>
+            <option value="clothes">زي مدرسي</option>
+            <option value="food">وجبات</option>
+            <option value="financial">مالي</option>
+          </select>
+          <button class="btn-outline" onclick="loadRequests()">🔄 تحديث</button>
+        </div>
+        <div class="card" style="padding:20px;overflow-x:auto;">
+          <table>
+            <thead><tr><th>العنوان</th><th>النوع</th><th>الحالة</th><th>الأولوية</th><th>التاريخ</th><th>تغيير الحالة</th></tr></thead>
+            <tbody id="requestsBody"><tr><td colspan="6" style="text-align:center;padding:24px;color:#9ca3af;"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
 
-        // Login helper to obtain JWT using credentials and store it
-        async function loginAdmin() {
-          clearError();
-          const email = loginEmail.value.trim();
-          const password = loginPassword.value;
-          if (!email || !password) return setError('الرجاء إدخال البريد وكلمة المرور.');
-          try {
-            const resp = await fetch(`${API_BASE}/auth/login`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email, password }),
-            });
-            const body = await resp.json();
-            if (!resp.ok) throw new Error(body.message || 'Login failed');
-            AUTH_TOKEN = body.token;
-            localStorage.setItem('hopesteps_admin_token', AUTH_TOKEN);
-            tokenSavedLabel.textContent = 'تم حفظ التوكن بنجاح.';
-            clearError();
-            await loadDashboard();
-          } catch (err) {
-            setError(err.message || 'فشل تسجيل الدخول');
-          }
-        }
+      <!-- ── VOLUNTEERS ── -->
+      <div id="sec-volunteers" class="section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h3 style="font-size:15px;font-weight:700;margin:0;">طلبات التطوع</h3>
+          <button class="btn-outline" onclick="loadVolunteers()">🔄 تحديث</button>
+        </div>
+        <div id="volunteersBody">
+          <div style="text-align:center;padding:40px;"><div class="spinner"></div></div>
+        </div>
+      </div>
 
-      async function fetchJson(path) {
-        const response = await fetch(`${API_BASE}${path}`, {
-          headers: getHeaders(),
-          credentials: "include",
-        });
-        if (!response.ok) {
-          const body = await response.json().catch(() => null);
-          throw new Error(body?.message || response.statusText || "حدث خطأ");
-        }
-        return response.json();
-      }
+      <!-- ── PLEDGES ── -->
+      <div id="sec-pledges" class="section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h3 style="font-size:15px;font-weight:700;margin:0;">سجل التبرعات</h3>
+          <button class="btn-outline" onclick="loadPledges()">🔄 تحديث</button>
+        </div>
+        <div class="card" style="padding:20px;overflow-x:auto;">
+          <table>
+            <thead><tr><th>المتبرع</th><th>طريقة الدفع</th><th>المبلغ</th><th>الحالة</th><th>التاريخ</th></tr></thead>
+            <tbody id="pledgesBody"><tr><td colspan="5" style="text-align:center;padding:24px;color:#9ca3af;"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
 
-      function setError(message) {
-        errorBanner.textContent = message;
-        errorBanner.classList.remove("hidden");
-      }
+      <!-- ── USERS ── -->
+      <div id="sec-users" class="section">
+        <div style="display:flex;gap:10px;margin-bottom:18px;">
+          <select id="filterRole" onchange="loadUsers()" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            <option value="">كل الأدوار</option>
+            <option value="student">طلاب</option>
+            <option value="volunteer">متطوعون</option>
+            <option value="donor">متبرعون</option>
+            <option value="admin">مشرفون</option>
+          </select>
+          <button class="btn-outline" onclick="loadUsers()">🔄 تحديث</button>
+        </div>
+        <div class="card" style="padding:20px;overflow-x:auto;">
+          <table>
+            <thead><tr><th>الاسم</th><th>البريد</th><th>الدور</th><th>موثّق</th><th>نشط</th><th>تاريخ التسجيل</th></tr></thead>
+            <tbody id="usersBody"><tr><td colspan="6" style="text-align:center;padding:24px;color:#9ca3af;"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
 
-      function clearError() {
-        errorBanner.textContent = "";
-        errorBanner.classList.add("hidden");
-      }
+    </div><!-- /dashContent -->
+  </main>
+</div>
 
-      function formatDate(rawDate) {
-        try {
-          return new Date(rawDate).toLocaleDateString("ar-EG", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          });
-        } catch {
-          return "-";
-        }
-      }
+<script>
+const API = "https://c32f123d-d954-4621-9d77-eac0252166b3-00-vgqwdfdy9utr.pike.replit.dev/api";
+let TOKEN = localStorage.getItem("tamkeen_admin_token") || "";
 
-      function getStatusBadgeClass(status) {
-        const normalized = (status || "").toLowerCase();
-        if (normalized.includes("pending") || normalized.includes("قيد"))
-          return "badge-pending";
-        if (normalized.includes("completed") || normalized.includes("مكتمل"))
-          return "badge-completed";
-        return "badge-review";
-      }
+// ── HELPERS ─────────────────────────────────────────────────────────────────
+function toast(msg, ok = true) {
+  const el = document.getElementById("toastEl");
+  el.textContent = msg;
+  el.className = ok ? "toast-ok" : "toast-err";
+  el.style.display = "block";
+  setTimeout(() => { el.style.display = "none"; }, 3000);
+}
 
-      function renderPledges(pledges) {
-        if (!pledges || pledges.length === 0) {
-          recentPledgesBody.innerHTML = `
-            <tr>
-              <td colspan="4" class="px-6 py-8 text-center text-sm text-slate-500">لا توجد بيانات تعهدات حالياً.</td>
-            </tr>
-          `;
-          return;
-        }
+function headers() {
+  return { "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN}` };
+}
 
-        recentPledgesBody.innerHTML = pledges
-          .map((pledge) => {
-            const donorName =
-              pledge.donor?.name || pledge.donor?.email || "متبرع مجهول";
-            const statusText = pledge.status || "قيد الانتظار";
-            return `
-              <tr class="hover:bg-slate-50 transition-colors">
-                <td class="px-6 py-4">${donorName}</td>
-                <td class="px-6 py-4">${pledge.pledgeType || "غير محدد"}</td>
-                <td class="px-6 py-4">${formatDate(pledge.createdAt)}</td>
-                <td class="px-6 py-4"><span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(statusText)}">${statusText}</span></td>
-              </tr>
-            `;
-          })
-          .join("");
-      }
+async function api(path, method = "GET", body = null) {
+  const opts = { method, headers: headers() };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(API + path, opts);
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.message || r.statusText || "خطأ في الخادم");
+  return data;
+}
 
-      function renderVolunteers(volunteers) {
-        if (!volunteers || volunteers.length === 0) {
-          volunteerApprovalsBody.innerHTML = `
-            <div class="rounded-[28px] border border-slate-200 bg-white/90 p-6 text-center text-sm text-slate-500 shadow-sm">
-              لا توجد طلبات موافقة حالياً.
-            </div>
-          `;
-          return;
-        }
+function fmt(dateStr) {
+  if (!dateStr) return "—";
+  return new Date(dateStr).toLocaleDateString("ar-EG", { day: "numeric", month: "short", year: "numeric" });
+}
 
-        volunteerApprovalsBody.innerHTML = volunteers
-          .map((volunteer) => {
-            const user = volunteer.user || {};
-            const specialization = Array.isArray(volunteer.specializations)
-              ? volunteer.specializations.join(" • ")
-              : "لم يتم التحديد";
-            return `
-              <div class="rounded-[28px] border border-slate-200 bg-white/90 p-4 shadow-sm">
-                <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <p class="font-semibold text-slate-900">${user.name || user.email || "متطوع"}</p>
-                    <p class="text-sm text-slate-500">${specialization}</p>
-                  </div>
-                  <div class="flex flex-wrap gap-2 text-sm">
-                    <button class="rounded-3xl bg-[#4C1D95] px-4 py-2 text-white transition hover:bg-[#422273]">موافقة</button>
-                    <button class="rounded-3xl border border-slate-200 px-4 py-2 text-slate-700 transition hover:bg-slate-100">رفض</button>
-                  </div>
-                </div>
-              </div>
-            `;
-          })
-          .join("");
-      }
+const TYPE_MAP = { tutoring:"دروس تطوعية", psychological:"دعم نفسي", stationery:"أدوات مدرسية",
+  clothes:"زي مدرسي", food:"وجبات", financial:"مالي", academic:"أكاديمي", housing:"سكن", other:"أخرى" };
 
-      async function loadDashboard() {
-        clearError();
+const STATUS_MAP = { pending:"معلق", under_review:"قيد المراجعة", approved:"موافق عليه",
+  in_progress:"جارٍ التنفيذ", fulfilled:"مكتمل", rejected:"مرفوض", closed:"مغلق" };
 
-        if (!AUTH_TOKEN) {
-          setError(
-            "لم يتم تحديد توكن المسؤول. الرجاء إدخاله ثم الضغط على حفظ.",
-          );
-          return;
-        }
+function statusBadge(s) {
+  const map = { pending:"badge-pending", under_review:"badge-other", approved:"badge-approved",
+    in_progress:"badge-approved", fulfilled:"badge-fulfilled", rejected:"badge-rejected", closed:"badge-other" };
+  return `<span class="badge ${map[s]||'badge-other'}">${STATUS_MAP[s]||s}</span>`;
+}
 
-        try {
-          const [
-            dashboardData,
-            pledgesData,
-            volunteerRequestsData,
-            studentsData,
-            donorsData,
-          ] = await Promise.all([
-            fetchJson(endpoints.dashboard),
-            fetchJson(endpoints.pledges),
-            fetchJson(endpoints.volunteerRequests),
-            fetchJson(endpoints.students),
-            fetchJson(endpoints.donors),
-          ]);
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+async function loginAdmin() {
+  const email = document.getElementById("loginEmail").value.trim();
+  const pw    = document.getElementById("loginPassword").value;
+  const errEl = document.getElementById("loginError");
+  const btn   = document.getElementById("loginBtn");
 
-          const stats = dashboardData?.data?.stats || {};
-          totalDonationsValue.textContent = ` $${Number(stats.totalDonationsAmount || 0).toLocaleString("ar-EG")}`;
-          activeVolunteersValue.textContent = Number(
-            stats.totalVolunteers || 0,
-          ).toLocaleString("ar-EG");
-          pendingRequestsValue.textContent = Number(
-            stats.pendingRequests || 0,
-          ).toLocaleString("ar-EG");
-          totalStudentsValue.textContent = Number(
-            stats.totalStudents || 0,
-          ).toLocaleString("ar-EG");
+  errEl.style.display = "none";
+  if (!email || !pw) { errEl.textContent = "الرجاء إدخال البريد وكلمة المرور."; errEl.style.display = "block"; return; }
 
-          donationsTrend.textContent = `إجمالي ${Number(stats.totalDonors || 0).toLocaleString("ar-EG")} متبرعين`;
-          volunteersTrend.textContent = `إجمالي ${Number(stats.totalVolunteers || 0).toLocaleString("ar-EG")} متطوعين`;
-          requestsTrend.textContent = `منها ${Number(stats.pendingRequests || 0).toLocaleString("ar-EG")} معلقة`;
-          studentsTrend.textContent = `منها ${Number(stats.totalStudents || 0).toLocaleString("ar-EG")} طالب`;
+  btn.textContent = "جارٍ الدخول…";
+  btn.disabled = true;
 
-          donationsTrendLabel.textContent = "مباشر";
-          volunteersTrendLabel.textContent = "مباشر";
-          requestsTrendLabel.textContent = "مباشر";
-          studentsTrendLabel.textContent = "مباشر";
+  try {
+    const res = await fetch(API + "/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password: pw })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "فشل تسجيل الدخول");
 
-          renderPledges(pledgesData?.data || []);
-          renderVolunteers(volunteerRequestsData?.data || []);
-        } catch (err) {
-          setError(err.message || "فشل الاتصال بالـ API.");
-        }
-      }
+    if (data.user?.role !== "admin") throw new Error("هذا الحساب ليس حساب مشرف.");
 
-      saveTokenButton.addEventListener("click", () => {
-        const token = authTokenInput.value.trim();
-        if (!token) {
-          setError("رجاءً أدخل رمز JWT صالح.");
-          return;
-        }
-        AUTH_TOKEN = token;
-        localStorage.setItem("hopesteps_admin_token", token);
-        tokenSavedLabel.textContent = "تم حفظ التوكن محلياً.";
-        clearError();
-        loadDashboard();
-      });
+    TOKEN = data.token;
+    localStorage.setItem("tamkeen_admin_token", TOKEN);
+    showDashboard(data.user);
+    toast("تم تسجيل الدخول بنجاح ✓");
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.style.display = "block";
+  } finally {
+    btn.textContent = "دخول";
+    btn.disabled = false;
+  }
+}
 
-        loginButton.addEventListener('click', loginAdmin);
+function saveJwt() {
+  const v = document.getElementById("jwtInput").value.trim();
+  if (!v) return;
+  TOKEN = v;
+  localStorage.setItem("tamkeen_admin_token", TOKEN);
+  toast("تم حفظ التوكن ✓");
+  verifyToken();
+}
 
-      window.addEventListener("DOMContentLoaded", loadDashboard);
-    </script>
-  </body>
+async function verifyToken() {
+  if (!TOKEN) return;
+  try {
+    const me = await api("/auth/me");
+    const user = me.data;
+    showDashboard(user);
+  } catch {
+    TOKEN = "";
+    localStorage.removeItem("tamkeen_admin_token");
+  }
+}
+
+function showDashboard(user) {
+  document.getElementById("loginPanel").style.display  = "none";
+  document.getElementById("dashContent").style.display = "block";
+  document.getElementById("loggedInUser").textContent  = `${user?.name || "مشرف"} — ${user?.email || ""}`;
+  checkDbStatus();
+  loadOverview();
+}
+
+function doLogout() {
+  TOKEN = "";
+  localStorage.removeItem("tamkeen_admin_token");
+  document.getElementById("loginPanel").style.display  = "block";
+  document.getElementById("dashContent").style.display = "none";
+  document.getElementById("loggedInUser").textContent  = "غير مسجّل";
+  toast("تم تسجيل الخروج");
+}
+
+// ── NAVIGATION ───────────────────────────────────────────────────────────────
+function showSection(name, el) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".nav-link").forEach(a => a.classList.remove("active"));
+  document.getElementById("sec-" + name).classList.add("active");
+  el.classList.add("active");
+
+  if (name === "requests")   loadRequests();
+  if (name === "volunteers") loadVolunteers();
+  if (name === "pledges")    loadPledges();
+  if (name === "users")      loadUsers();
+}
+
+// ── DB STATUS ────────────────────────────────────────────────────────────────
+async function checkDbStatus() {
+  const dot = document.getElementById("dbDot");
+  const lbl = document.getElementById("dbLabel");
+  try {
+    const h = await fetch(API.replace("/api","") + "/api/health");
+    const d = await h.json();
+    const ok = d?.db === "connected";
+    dot.className = "db-status " + (ok ? "db-ok" : "db-err");
+    lbl.textContent = ok ? "متصلة" : "منقطعة";
+  } catch {
+    dot.className = "db-status db-err";
+    lbl.textContent = "خطأ";
+  }
+}
+
+// ── OVERVIEW ────────────────────────────────────────────────────────────────
+async function loadOverview() {
+  try {
+    const d = await api("/admin/dashboard");
+    const s = d.data.stats;
+    document.getElementById("s-students").textContent   = s.totalStudents  || 0;
+    document.getElementById("s-volunteers").textContent = s.totalVolunteers || 0;
+    document.getElementById("s-donors").textContent     = s.totalDonors    || 0;
+    document.getElementById("s-pending").textContent    = s.pendingRequests || 0;
+    document.getElementById("s-fulfilled").textContent  = s.fulfilledRequests || 0;
+    document.getElementById("s-donations").textContent  = "$" + Number(s.totalDonationsAmount || 0).toLocaleString();
+
+    const rows = (d.data.recentRequests || []).map(r => `
+      <tr>
+        <td>${r.title || "—"}</td>
+        <td>${TYPE_MAP[r.type] || r.type}</td>
+        <td>${statusBadge(r.status)}</td>
+        <td><span class="badge ${r.urgency === 'high' || r.urgency === 'critical' ? 'badge-rejected' : 'badge-other'}">${r.urgency || "—"}</span></td>
+        <td>${fmt(r.createdAt)}</td>
+        <td>
+          <select onchange="changeStatus('${r._id}', this.value)" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">
+            <option value="">—</option>
+            <option value="approved">موافق</option>
+            <option value="in_progress">جارٍ</option>
+            <option value="fulfilled">مكتمل</option>
+            <option value="rejected">مرفوض</option>
+          </select>
+        </td>
+      </tr>`).join("");
+    document.getElementById("recentRequestsBody").innerHTML = rows || '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:20px;">لا توجد طلبات</td></tr>';
+  } catch (e) {
+    document.getElementById("recentRequestsBody").innerHTML = `<tr><td colspan="6" style="color:#b91c1c;padding:16px;">${e.message}</td></tr>`;
+  }
+}
+
+// ── REQUESTS ────────────────────────────────────────────────────────────────
+async function loadRequests() {
+  const status = document.getElementById("filterStatus").value;
+  const type   = document.getElementById("filterType").value;
+  const tbody  = document.getElementById("requestsBody");
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;"><div class="spinner"></div></td></tr>';
+
+  try {
+    let path = "/admin/requests?limit=50";
+    if (status) path += "&status=" + status;
+    if (type)   path += "&type="   + type;
+    const d = await api(path);
+    const rows = (d.data || []).map(r => `
+      <tr>
+        <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.title}</td>
+        <td>${TYPE_MAP[r.type] || r.type}</td>
+        <td>${statusBadge(r.status)}</td>
+        <td><span class="badge ${r.urgency === 'high' || r.urgency === 'critical' ? 'badge-rejected' : 'badge-other'}">${r.urgency}</span></td>
+        <td style="white-space:nowrap;">${fmt(r.createdAt)}</td>
+        <td>
+          <select onchange="changeStatus('${r._id}', this.value)" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">
+            <option value="">تغيير</option>
+            <option value="approved">موافق</option>
+            <option value="in_progress">جارٍ</option>
+            <option value="fulfilled">مكتمل</option>
+            <option value="rejected">مرفوض</option>
+          </select>
+        </td>
+      </tr>`).join("");
+    tbody.innerHTML = rows || '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:20px;">لا توجد نتائج</td></tr>';
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:#b91c1c;padding:16px;">${e.message}</td></tr>`;
+  }
+}
+
+async function changeStatus(id, status) {
+  if (!status) return;
+  try {
+    await api("/admin/requests/" + id + "/status", "PUT", { status });
+    toast("تم تحديث حالة الطلب ✓");
+    loadOverview();
+    if (document.getElementById("sec-requests").classList.contains("active")) loadRequests();
+  } catch (e) {
+    toast(e.message, false);
+  }
+}
+
+// ── VOLUNTEERS ───────────────────────────────────────────────────────────────
+async function loadVolunteers() {
+  const cont = document.getElementById("volunteersBody");
+  cont.innerHTML = '<div style="text-align:center;padding:40px;"><div class="spinner"></div></div>';
+  try {
+    const d = await api("/admin/volunteer-requests?limit=50");
+    if (!d.data?.length) { cont.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;">لا توجد طلبات تطوع.</div>'; return; }
+
+    cont.innerHTML = d.data.map(v => `
+      <div class="card" style="padding:18px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div>
+          <p style="font-weight:700;margin:0;font-size:15px;">${v.user?.name || v.user?.email || "متطوع"}</p>
+          <p style="font-size:13px;color:#6b7280;margin:4px 0 0;">${(v.specializations||[]).join(" • ") || "—"}</p>
+          <p style="font-size:12px;color:#9ca3af;margin:2px 0 0;">مهارات: ${(v.skills||[]).join(", ") || "—"} &nbsp;|&nbsp; ${v.availability||"—"}</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="badge ${v.isApproved ? 'badge-fulfilled' : 'badge-pending'}">${v.isApproved ? "معتمد" : "بانتظار الموافقة"}</span>
+          ${!v.isApproved ? `<button class="btn-approve" onclick="approveVolunteer('${v._id}',true)">موافقة</button>` : ""}
+          <button class="btn-reject" onclick="approveVolunteer('${v._id}',false)">رفض</button>
+        </div>
+      </div>`).join("");
+  } catch (e) {
+    cont.innerHTML = `<div style="color:#b91c1c;padding:16px;">${e.message}</div>`;
+  }
+}
+
+async function approveVolunteer(id, approve) {
+  try {
+    await api("/admin/volunteers/" + id + "/" + (approve ? "approve" : "reject"), "PUT");
+    toast(approve ? "تم قبول المتطوع ✓" : "تم رفض المتطوع");
+    loadVolunteers();
+  } catch (e) { toast(e.message, false); }
+}
+
+// ── PLEDGES ──────────────────────────────────────────────────────────────────
+async function loadPledges() {
+  const tbody = document.getElementById("pledgesBody");
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;"><div class="spinner"></div></td></tr>';
+  try {
+    const d = await api("/admin/pledges?limit=50");
+    const rows = (d.data || []).map(p => `
+      <tr>
+        <td>${p.donor?.name || p.donor?.email || "مجهول"}</td>
+        <td>${p.pledgeType || "—"}</td>
+        <td>${p.amount ? "$" + p.amount.toLocaleString() : "عيني"}</td>
+        <td>${statusBadge(p.status || "pending")}</td>
+        <td>${fmt(p.createdAt)}</td>
+      </tr>`).join("");
+    tbody.innerHTML = rows || '<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:20px;">لا توجد تبرعات مسجلة بعد.</td></tr>';
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:#b91c1c;padding:16px;">${e.message}</td></tr>`;
+  }
+}
+
+// ── USERS ────────────────────────────────────────────────────────────────────
+async function loadUsers() {
+  const role  = document.getElementById("filterRole").value;
+  const tbody = document.getElementById("usersBody");
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;"><div class="spinner"></div></td></tr>';
+  try {
+    let path = "/admin/users?limit=100";
+    if (role) path += "&role=" + role;
+    const d = await api(path);
+    const rows = (d.data || []).map(u => `
+      <tr>
+        <td style="font-weight:600;">${u.name || "—"}</td>
+        <td style="color:#6b7280;">${u.email}</td>
+        <td>${u.role}</td>
+        <td>${u.isVerified ? '<span class="badge badge-fulfilled">نعم</span>' : '<span class="badge badge-pending">لا</span>'}</td>
+        <td>${u.isActive ? '<span class="badge badge-fulfilled">نشط</span>' : '<span class="badge badge-rejected">موقوف</span>'}</td>
+        <td style="color:#9ca3af;">${fmt(u.createdAt)}</td>
+      </tr>`).join("");
+    tbody.innerHTML = rows || '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:20px;">لا توجد نتائج</td></tr>';
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:#b91c1c;padding:16px;">${e.message}</td></tr>`;
+  }
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", () => {
+  if (TOKEN) verifyToken();
+  document.getElementById("loginEmail").addEventListener("keydown", e => { if (e.key === "Enter") loginAdmin(); });
+  document.getElementById("loginPassword").addEventListener("keydown", e => { if (e.key === "Enter") loginAdmin(); });
+});
+</script>
+</body>
 </html>
