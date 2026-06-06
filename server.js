@@ -1,5 +1,6 @@
 ////////////////////////////
 const express = require("express");
+const path = require("path");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -122,6 +123,11 @@ app.use("/api/requests", requestRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/notifications", notificationRoutes);
 
+// Serve admin dashboard HTML from server root at /admin
+app.get("/admin", (req, res) => {
+  res.sendFile(path.join(__dirname, "admin-dashboard.html"));
+});
+
 // ─── Health check ──────────────────────────────────────────────────────────
 app.get("/api/health", (req, res) => {
   res.status(200).json({
@@ -137,8 +143,6 @@ app.get("/", (req, res) => {
   res.json({ message: "Welcome to HopeSteps API", version: "1.0.0" });
 });
 
-
-
 //--reset password
 app.put("/api/auth/reset-password", async (req, res) => {
   try {
@@ -147,7 +151,7 @@ app.put("/api/auth/reset-password", async (req, res) => {
 
     // 1. جلب المستخدم مع إجبار السيرفر يفرجينا الحقول المخفية باستخدام (+)
     const user = await User.findOne({ email: lowerEmail }).select(
-      "+resetPasswordToken +resetPasswordExpire +password"
+      "+resetPasswordToken +resetPasswordExpire +password",
     );
 
     console.log("-----------------------------------------");
@@ -176,7 +180,9 @@ app.put("/api/auth/reset-password", async (req, res) => {
     // 4. التحقق من الوقت
     if (user.resetPasswordExpire < Date.now()) {
       console.log("❌ صلاحية الكود منتهية!");
-      return res.status(400).json({ status: "error", message: "تأخرت، الكود انتهى" });
+      return res
+        .status(400)
+        .json({ status: "error", message: "تأخرت، الكود انتهى" });
     }
 
     // 5. التغيير الفعلي

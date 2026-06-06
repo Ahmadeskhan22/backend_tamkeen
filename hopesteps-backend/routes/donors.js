@@ -11,7 +11,7 @@ const { protect, authorize } = require("../middleware/auth");
 // @access  Private (donor)
 router.post("/pledge", protect, authorize("donor"), async (req, res) => {
   try {
-    const { pledgeType } = req.body; 
+    const { pledgeType } = req.body;
 
     if (!pledgeType) {
       return res.status(400).json({
@@ -20,17 +20,28 @@ router.post("/pledge", protect, authorize("donor"), async (req, res) => {
       });
     }
 
-    // إنشاء سجل تبرع جديد ومستقل في الداتابيز
-    const newPledge = await Pledge.create({
-      donor: req.user._id, // بنربط الطلب بحساب المستخدم الحالي
-      pledgeType: pledgeType
+    const donorProfile = await Donor.findOne({ user: req.user._id });
+    if (!donorProfile) {
+      return res.status(404).json({
+        status: "error",
+        message: "Donor profile not found",
+      });
+    }
+
+    // إنشاء سجل تبرع جديد في مجموعة Pledges
+    await Pledge.create({
+      donor: req.user._id,
+      pledgeType: pledgeType,
     });
+
+    // تسجيل نوع الطلب ضمن ملف المتبرع نفسه
+    donorProfile.quickPledges.push({ pledgeType });
+    await donorProfile.save();
 
     res.status(200).json({
       status: "success",
       message: `تم تسجيل رغبتك بـ (${pledgeType}) بنجاح! 🌟`,
     });
-
   } catch (err) {
     console.error("🔥 خطأ في تسجيل التبرع:", err);
     res.status(500).json({ status: "error", message: "حدث خطأ في السيرفر" });
@@ -136,12 +147,10 @@ router.post(
           .status(404)
           .json({ status: "error", message: "Request not found" });
       if (request.type !== "financial") {
-        return res
-          .status(400)
-          .json({
-            status: "error",
-            message: "This request does not accept financial donations",
-          });
+        return res.status(400).json({
+          status: "error",
+          message: "This request does not accept financial donations",
+        });
       }
 
       const donor = await Donor.findOne({ user: req.user._id });
@@ -180,13 +189,11 @@ router.post(
         data: { requestId: request._id, amount, currency },
       });
 
-      res
-        .status(200)
-        .json({
-          status: "success",
-          message: "Donation recorded successfully",
-          data: { amount, currency, request: request._id },
-        });
+      res.status(200).json({
+        status: "success",
+        message: "Donation recorded successfully",
+        data: { amount, currency, request: request._id },
+      });
     } catch (err) {
       res.status(500).json({ status: "error", message: err.message });
     }

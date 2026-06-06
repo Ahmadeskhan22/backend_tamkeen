@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>لوحة إدارة HopeSteps</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        background: #f4f6f9;
+        color: #1f2937;
+        min-height: 100vh;
+      }
+      .glass-card {
+        background: rgba(255, 255, 255, 0.74);
+        backdrop-filter: blur(18px);
+        box-shadow: 0 24px 60px rgba(76, 29, 149, 0.14);
+      }
+      .badge-pending {
+        background: rgba(249, 115, 22, 0.12);
+        color: #c2410c;
+      }
+      .badge-completed {
+        background: rgba(16, 185, 129, 0.12);
+        color: #047857;
+      }
+      .badge-review {
+        background: rgba(59, 130, 246, 0.12);
+        color: #1d4ed8;
+      }
+      .scrollbar-thin::-webkit-scrollbar {
+        width: 6px;
+      }
+      .scrollbar-thin::-webkit-scrollbar-thumb {
+        background: rgba(76, 29, 149, 0.25);
+        border-radius: 9999px;
+      }
+    </style>
+  </head>
+  <body class="font-sans antialiased">
+    <div class="min-h-screen bg-[#F4F6F9] text-slate-900">
+      <div class="flex min-h-screen flex-col md:flex-row">
+        <aside
+          class="w-full border-b border-slate-200 bg-white/80 glass-card md:w-72 md:min-h-screen md:border-r md:border-b-0"
+        >
+          <div class="mx-6 mt-6 flex items-center justify-between gap-3">
+            <div>
+              <p class="text-xs uppercase tracking-[0.24em] text-slate-400">
+                HopeSteps
+              </p>
+              <h1 class="text-2xl font-semibold text-[#4C1D95]">
+                لوحة الإدارة
+              </h1>
+            </div>
+          </div>
+          <nav class="mt-10 space-y-1 px-4 pb-8">
+            <a
+              href="#"
+              class="flex items-center gap-3 rounded-3xl px-4 py-3 text-sm font-medium text-[#4C1D95] shadow-sm shadow-[#4C1D95]/10 transition hover:bg-[#4C1D95]/5"
+            >
+              <span
+                class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#4C1D95]/10 text-[#4C1D95]"
+                >🏠</span
+              >
+              نظرة عامة
+            </a>
+            <a
+              href="#pledges"
+              class="flex items-center gap-3 rounded-3xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+            >
+              <span
+                class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#4C1D95]/10 text-[#4C1D95]"
+                >🤝</span
+              >
+              تعهدات التبرع
+            </a>
+            <a
+              href="#volunteers"
+              class="flex items-center gap-3 rounded-3xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+            >
+              <span
+                class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#4C1D95]/10 text-[#4C1D95]"
+                >🧑‍🤝‍🧑</span
+              >
+              إدارة المتطوعين
+            </a>
+            <a
+              href="#students"
+              class="flex items-center gap-3 rounded-3xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+            >
+              <span
+                class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#4C1D95]/10 text-[#4C1D95]"
+                >🎓</span
+              >
+              الطلاب والطلبات
+            </a>
+            <div
+              class="mt-6 rounded-3xl bg-[#4C1D95] px-4 py-5 text-white shadow-[#4C1D95]/20"
+            >
+              <p class="text-sm font-medium opacity-90">إعدادات أساسية</p>
+              <p class="mt-3 text-xs leading-5 text-slate-200/90">
+                قم بإدارة سياسة المنصة وحسابات المشرفين.
+              </p>
+            </div>
+            <button
+              class="mt-5 w-full rounded-3xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              تسجيل الخروج
+            </button>
+          </nav>
+        </aside>
+
+        <main class="flex-1 p-6 md:p-8">
+          <header
+            class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div>
+              <p class="text-sm text-slate-500">مرحباً بك في لوحة التحكم</p>
+              <h2 class="mt-1 text-3xl font-semibold text-slate-900">
+                إدارة منصة تمكين الاجتماعي
+              </h2>
+            </div>
+            <div
+              class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-end"
+            >
+              <div class="relative w-full sm:w-80">
+                <span
+                  class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400"
+                  >🔍</span
+                >
+                <input
+                  type="search"
+                  placeholder="ابحث في الطلبات أو المتطوعين"
+                  class="w-full rounded-3xl border border-slate-200 bg-white/90 py-3 pr-12 pl-5 text-sm shadow-sm outline-none transition focus:border-[#4C1D95] focus:ring-2 focus:ring-[#4C1D95]/15"
+                />
+              </div>
+              <div
+                class="flex items-center gap-3 rounded-3xl bg-white/90 px-4 py-3 shadow-sm shadow-slate-200/70"
+              >
+                <button
+                  class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 transition hover:bg-[#4C1D95]/10 hover:text-[#4C1D95]"
+                >
+                  🔔
+                </button>
+                <div class="flex items-center gap-3">
+                  <img
+                    src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=facearea&facepad=3&w=64&h=64&q=80"
+                    alt="Admin avatar"
+                    class="h-12 w-12 rounded-3xl border border-white object-cover shadow-sm"
+                  />
+                  <div>
+                    <p class="text-sm font-semibold text-slate-900">
+                      مدير المنصة
+                    </p>
+                    <p class="text-xs text-slate-500">hope.steps@admin.com</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <section
+            class="mt-6 rounded-[28px] border border-[#4C1D95]/10 bg-white/90 p-5 shadow-sm shadow-[#4C1D95]/10"
+          >
+            <div
+              class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div>
+                <p class="text-sm font-semibold text-slate-900">
+                  تكامل الخلفية
+                </p>
+                <p class="text-sm text-slate-500">
+                  ضع رمز JWT المسؤول لتفعيل طلبات API المحمية من لوحة الإدارة.
+                </p>
+              </div>
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <input
+                  id="adminTokenInput"
+                  type="text"
+                  placeholder="أدخل رمز JWT هنا"
+                  class="min-w-[260px] rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+                />
+                <button
+                  id="saveTokenButton"
+                  class="rounded-3xl bg-[#4C1D95] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#422273]"
+                >
+                  حفظ التوكن
+                </button>
+              </div>
+            </div>
+            <p id="adminTokenSaved" class="mt-3 text-xs text-[#4C1D95]">
+              إذا تم حفظ التوكن، سيستخدم للمكالمات إلى الـ API.
+            </p>
+            <div
+              id="dashboardError"
+              class="mt-4 hidden rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+            ></div>
+          </section>
+
+          <section class="mt-8 grid gap-5 xl:grid-cols-4 lg:grid-cols-2">
+            <article
+              class="glass-card rounded-[32px] border border-white/80 p-6 shadow-xl shadow-[#4C1D95]/10"
+            >
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <p class="text-sm text-slate-500">إجمالي التبرعات</p>
+                  <h3
+                    id="totalDonationsValue"
+                    class="mt-3 text-3xl font-semibold text-slate-900"
+                  >
+                    —
+                  </h3>
+                </div>
+                <div
+                  class="flex h-12 w-12 items-center justify-center rounded-3xl bg-[#4C1D95]/10 text-[#4C1D95]"
+                >
+                  💰
+                </div>
+              </div>
+              <div
+                class="mt-6 flex items-center justify-between gap-4 text-sm text-slate-500"
+              >
+                <span id="donationsTrend">جارٍ التحميل...</span>
+                <span
+                  id="donationsTrendLabel"
+                  class="rounded-full bg-[#D8B4FE]/30 px-3 py-1 text-[#6D28D9]"
+                  >—</span
+                >
+              </div>
+            </article>
+
+            <article
+              class="glass-card rounded-[32px] border border-white/80 p-6 shadow-xl shadow-[#4C1D95]/10"
+            >
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <p class="text-sm text-slate-500">المتطوعون النشطون</p>
+                  <h3
+                    id="activeVolunteersValue"
+                    class="mt-3 text-3xl font-semibold text-slate-900"
+                  >
+                    —
+                  </h3>
+                </div>
+                <div
+                  class="flex h-12 w-12 items-center justify-center rounded-3xl bg-[#4C1D95]/10 text-[#4C1D95]"
+                >
+                  🧑‍🤝‍🧑
+                </div>
+              </div>
+              <div
+                class="mt-6 flex items-center justify-between gap-4 text-sm text-slate-500"
+              >
+                <span id="volunteersTrend">جارٍ التحميل...</span>
+                <span
+                  id="volunteersTrendLabel"
+                  class="rounded-full bg-[#A5F3FC]/30 px-3 py-1 text-[#0E7490]"
+                  >—</span
+                >
+              </div>
+            </article>
+
+            <article
+              class="glass-card rounded-[32px] border border-white/80 p-6 shadow-xl shadow-[#4C1D95]/10"
+            >
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <p class="text-sm text-slate-500">الطلبات المعلقة</p>
+                  <h3
+                    id="pendingRequestsValue"
+                    class="mt-3 text-3xl font-semibold text-slate-900"
+                  >
+                    —
+                  </h3>
+                </div>
+                <div
+                  class="flex h-12 w-12 items-center justify-center rounded-3xl bg-[#4C1D95]/10 text-[#4C1D95]"
+                >
+                  📩
+                </div>
+              </div>
+              <div
+                class="mt-6 flex items-center justify-between gap-4 text-sm text-slate-500"
+              >
+                <span id="requestsTrend">جارٍ التحميل...</span>
+                <span
+                  id="requestsTrendLabel"
+                  class="rounded-full bg-[#FBCFE8]/30 px-3 py-1 text-[#BE185D]"
+                  >—</span
+                >
+              </div>
+            </article>
+
+            <article
+              class="glass-card rounded-[32px] border border-white/80 p-6 shadow-xl shadow-[#4C1D95]/10"
+            >
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <p class="text-sm text-slate-500">إجمالي الطلاب</p>
+                  <h3
+                    id="totalStudentsValue"
+                    class="mt-3 text-3xl font-semibold text-slate-900"
+                  >
+                    —
+                  </h3>
+                </div>
+                <div
+                  class="flex h-12 w-12 items-center justify-center rounded-3xl bg-[#4C1D95]/10 text-[#4C1D95]"
+                >
+                  🎓
+                </div>
+              </div>
+              <div
+                class="mt-6 flex items-center justify-between gap-4 text-sm text-slate-500"
+              >
+                <span id="studentsTrend">جارٍ التحميل...</span>
+                <span
+                  id="studentsTrendLabel"
+                  class="rounded-full bg-[#D9F99D]/30 px-3 py-1 text-[#3F6212]"
+                  >—</span
+                >
+              </div>
+            </article>
+          </section>
+
+          <section class="mt-10 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+            <div
+              class="glass-card rounded-[32px] border border-white/80 p-6 shadow-xl shadow-[#4C1D95]/10"
+            >
+              <div
+                class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div>
+                  <h3 class="text-xl font-semibold text-slate-900">
+                    التعهدات الأخيرة
+                  </h3>
+                  <p class="text-sm text-slate-500">
+                    نظرة سريعة على تعهدات المتبرعين الحديثة.
+                  </p>
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                      <input
+                        id="adminTokenInput"
+                        type="text"
+                        placeholder="أدخل رمز JWT هنا (أو سجل الدخول أدناه)"
+                        class="min-w-[260px] rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+                      />
+                      <button
+                        id="saveTokenButton"
+                        class="rounded-3xl bg-[#4C1D95] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#422273]"
+                      >
+                        حفظ التوكن
+                      </button>
+                    </div>
+                    <div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:items-center">
+                      <input id="loginEmail" type="email" placeholder="بريد المشرف" class="rounded-3xl border border-slate-200 px-4 py-2 text-sm" />
+                      <input id="loginPassword" type="password" placeholder="كلمة المرور" class="rounded-3xl border border-slate-200 px-4 py-2 text-sm" />
+                      <button id="loginButton" class="rounded-3xl bg-[#6b21a8] px-4 py-2 text-sm font-semibold text-white">تسجيل دخول</button>
+                  <thead class="bg-slate-50 text-slate-500">
+                    <tr>
+                      <th class="whitespace-nowrap px-6 py-4 font-medium">
+                        اسم المتبرع
+                      </th>
+                      <th class="whitespace-nowrap px-6 py-4 font-medium">
+                        نوع التعهد
+                      </th>
+                      <th class="whitespace-nowrap px-6 py-4 font-medium">
+                        التاريخ
+                      </th>
+                      <th class="whitespace-nowrap px-6 py-4 font-medium">
+                        الحالة
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody
+                    id="recentPledgesBody"
+                    class="divide-y divide-slate-200 bg-white"
+                  >
+                    <tr>
+                      <td
+                        colspan="4"
+                        class="px-6 py-8 text-center text-sm text-slate-500"
+                      >
+                        جارٍ تحميل التعهدات...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div
+              class="glass-card rounded-[32px] border border-white/80 p-6 shadow-xl shadow-[#4C1D95]/10"
+            >
+              <div
+                class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div>
+                  <h3 class="text-xl font-semibold text-slate-900">
+                    موافقات المتطوعين
+                  </h3>
+                  <p class="text-sm text-slate-500">
+                    راقب طلبات الانضمام وسجل المصادقات.
+                  </p>
+                </div>
+                <div
+                  class="inline-flex rounded-full bg-[#EDE9FE] px-3 py-2 text-xs font-semibold text-[#5b21b6]"
+                >
+                  4 طلبات جديدة
+                </div>
+              </div>
+              <div id="volunteerApprovalsBody" class="mt-6 space-y-4">
+                <div
+                  class="rounded-[28px] border border-slate-200 bg-white/90 p-6 text-center text-sm text-slate-500 shadow-sm"
+                >
+                  لا توجد طلبات موافقة متاحة حالياً أو جارٍ التحميل...
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <footer
+            class="mt-10 rounded-[32px] border border-slate-200 bg-white/90 p-6 shadow-sm shadow-slate-200/50"
+          >
+            <div
+              class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <p class="text-sm text-slate-500">Tamkeen © 2026. منصة تمكين .</p>
+              <div class="flex flex-wrap gap-4 text-sm text-slate-500">
+                <a href="#" class="transition hover:text-[#4C1D95]">الخصوصية</a>
+                <a href="#" class="transition hover:text-[#4C1D95]">الشروط</a>
+                <a href="#" class="transition hover:text-[#4C1D95]">الدعم</a>
+              </div>
+            </div>
+          </footer>
+        </main>
+      </div>
+    </div>
+    <script>
+      // Use the current site origin so the dashboard works when served from the deployed server
+   const API_HOST = "https://c32f123d-d954-4621-9d77-eac0252166b3-00-vgqwdfdy9utr.pike.replit.dev";
+const API_BASE = `${API_HOST}/api`;
+      const authTokenInput = document.getElementById("adminTokenInput");
+      const saveTokenButton = document.getElementById("saveTokenButton");
+        const loginEmail = document.getElementById('loginEmail');
+        const loginPassword = document.getElementById('loginPassword');
+        const loginButton = document.getElementById('loginButton');
+      const tokenSavedLabel = document.getElementById("adminTokenSaved");
+      const errorBanner = document.getElementById("dashboardError");
+      const totalDonationsValue = document.getElementById(
+        "totalDonationsValue",
+      );
+      const donationsTrend = document.getElementById("donationsTrend");
+      const donationsTrendLabel = document.getElementById(
+        "donationsTrendLabel",
+      );
+      const activeVolunteersValue = document.getElementById(
+        "activeVolunteersValue",
+      );
+      const volunteersTrend = document.getElementById("volunteersTrend");
+      const volunteersTrendLabel = document.getElementById(
+        "volunteersTrendLabel",
+      );
+      const pendingRequestsValue = document.getElementById(
+        "pendingRequestsValue",
+      );
+      const requestsTrend = document.getElementById("requestsTrend");
+      const requestsTrendLabel = document.getElementById("requestsTrendLabel");
+      const totalStudentsValue = document.getElementById("totalStudentsValue");
+      const studentsTrend = document.getElementById("studentsTrend");
+      const studentsTrendLabel = document.getElementById("studentsTrendLabel");
+      const recentPledgesBody = document.getElementById("recentPledgesBody");
+      const volunteerApprovalsBody = document.getElementById(
+        "volunteerApprovalsBody",
+      );
+
+      let AUTH_TOKEN = localStorage.getItem("hopesteps_admin_token") || "";
+
+      if (AUTH_TOKEN) {
+        tokenSavedLabel.textContent = "تم تحميل التوكن من التخزين المحلي.";
+      }
+
+      const endpoints = {
+        dashboard: "/admin/dashboard",
+        pledges: "/admin/pledges?limit=5",
+        volunteerRequests: "/admin/volunteer-requests?limit=5",
+        students: "/students?limit=5",
+        donors: "/donors?limit=5",
+      };
+
+      function getHeaders() {
+        const headers = { "Content-Type": "application/json" };
+        if (AUTH_TOKEN) {
+          headers["Authorization"] = `Bearer ${AUTH_TOKEN}`;
+        }
+        return headers;
+      }
+
+        // Login helper to obtain JWT using credentials and store it
+        async function loginAdmin() {
+          clearError();
+          const email = loginEmail.value.trim();
+          const password = loginPassword.value;
+          if (!email || !password) return setError('الرجاء إدخال البريد وكلمة المرور.');
+          try {
+            const resp = await fetch(`${API_BASE}/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password }),
+            });
+            const body = await resp.json();
+            if (!resp.ok) throw new Error(body.message || 'Login failed');
+            AUTH_TOKEN = body.token;
+            localStorage.setItem('hopesteps_admin_token', AUTH_TOKEN);
+            tokenSavedLabel.textContent = 'تم حفظ التوكن بنجاح.';
+            clearError();
+            await loadDashboard();
+          } catch (err) {
+            setError(err.message || 'فشل تسجيل الدخول');
+          }
+        }
+
+      async function fetchJson(path) {
+        const response = await fetch(`${API_BASE}${path}`, {
+          headers: getHeaders(),
+          credentials: "include",
+        });
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          throw new Error(body?.message || response.statusText || "حدث خطأ");
+        }
+        return response.json();
+      }
+
+      function setError(message) {
+        errorBanner.textContent = message;
+        errorBanner.classList.remove("hidden");
+      }
+
+      function clearError() {
+        errorBanner.textContent = "";
+        errorBanner.classList.add("hidden");
+      }
+
+      function formatDate(rawDate) {
+        try {
+          return new Date(rawDate).toLocaleDateString("ar-EG", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          });
+        } catch {
+          return "-";
+        }
+      }
+
+      function getStatusBadgeClass(status) {
+        const normalized = (status || "").toLowerCase();
+        if (normalized.includes("pending") || normalized.includes("قيد"))
+          return "badge-pending";
+        if (normalized.includes("completed") || normalized.includes("مكتمل"))
+          return "badge-completed";
+        return "badge-review";
+      }
+
+      function renderPledges(pledges) {
+        if (!pledges || pledges.length === 0) {
+          recentPledgesBody.innerHTML = `
+            <tr>
+              <td colspan="4" class="px-6 py-8 text-center text-sm text-slate-500">لا توجد بيانات تعهدات حالياً.</td>
+            </tr>
+          `;
+          return;
+        }
+
+        recentPledgesBody.innerHTML = pledges
+          .map((pledge) => {
+            const donorName =
+              pledge.donor?.name || pledge.donor?.email || "متبرع مجهول";
+            const statusText = pledge.status || "قيد الانتظار";
+            return `
+              <tr class="hover:bg-slate-50 transition-colors">
+                <td class="px-6 py-4">${donorName}</td>
+                <td class="px-6 py-4">${pledge.pledgeType || "غير محدد"}</td>
+                <td class="px-6 py-4">${formatDate(pledge.createdAt)}</td>
+                <td class="px-6 py-4"><span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(statusText)}">${statusText}</span></td>
+              </tr>
+            `;
+          })
+          .join("");
+      }
+
+      function renderVolunteers(volunteers) {
+        if (!volunteers || volunteers.length === 0) {
+          volunteerApprovalsBody.innerHTML = `
+            <div class="rounded-[28px] border border-slate-200 bg-white/90 p-6 text-center text-sm text-slate-500 shadow-sm">
+              لا توجد طلبات موافقة حالياً.
+            </div>
+          `;
+          return;
+        }
+
+        volunteerApprovalsBody.innerHTML = volunteers
+          .map((volunteer) => {
+            const user = volunteer.user || {};
+            const specialization = Array.isArray(volunteer.specializations)
+              ? volunteer.specializations.join(" • ")
+              : "لم يتم التحديد";
+            return `
+              <div class="rounded-[28px] border border-slate-200 bg-white/90 p-4 shadow-sm">
+                <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p class="font-semibold text-slate-900">${user.name || user.email || "متطوع"}</p>
+                    <p class="text-sm text-slate-500">${specialization}</p>
+                  </div>
+                  <div class="flex flex-wrap gap-2 text-sm">
+                    <button class="rounded-3xl bg-[#4C1D95] px-4 py-2 text-white transition hover:bg-[#422273]">موافقة</button>
+                    <button class="rounded-3xl border border-slate-200 px-4 py-2 text-slate-700 transition hover:bg-slate-100">رفض</button>
+                  </div>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      async function loadDashboard() {
+        clearError();
+
+        if (!AUTH_TOKEN) {
+          setError(
+            "لم يتم تحديد توكن المسؤول. الرجاء إدخاله ثم الضغط على حفظ.",
+          );
+          return;
+        }
+
+        try {
+          const [
+            dashboardData,
+            pledgesData,
+            volunteerRequestsData,
+            studentsData,
+            donorsData,
+          ] = await Promise.all([
+            fetchJson(endpoints.dashboard),
+            fetchJson(endpoints.pledges),
+            fetchJson(endpoints.volunteerRequests),
+            fetchJson(endpoints.students),
+            fetchJson(endpoints.donors),
+          ]);
+
+          const stats = dashboardData?.data?.stats || {};
+          totalDonationsValue.textContent = ` $${Number(stats.totalDonationsAmount || 0).toLocaleString("ar-EG")}`;
+          activeVolunteersValue.textContent = Number(
+            stats.totalVolunteers || 0,
+          ).toLocaleString("ar-EG");
+          pendingRequestsValue.textContent = Number(
+            stats.pendingRequests || 0,
+          ).toLocaleString("ar-EG");
+          totalStudentsValue.textContent = Number(
+            stats.totalStudents || 0,
+          ).toLocaleString("ar-EG");
+
+          donationsTrend.textContent = `إجمالي ${Number(stats.totalDonors || 0).toLocaleString("ar-EG")} متبرعين`;
+          volunteersTrend.textContent = `إجمالي ${Number(stats.totalVolunteers || 0).toLocaleString("ar-EG")} متطوعين`;
+          requestsTrend.textContent = `منها ${Number(stats.pendingRequests || 0).toLocaleString("ar-EG")} معلقة`;
+          studentsTrend.textContent = `منها ${Number(stats.totalStudents || 0).toLocaleString("ar-EG")} طالب`;
+
+          donationsTrendLabel.textContent = "مباشر";
+          volunteersTrendLabel.textContent = "مباشر";
+          requestsTrendLabel.textContent = "مباشر";
+          studentsTrendLabel.textContent = "مباشر";
+
+          renderPledges(pledgesData?.data || []);
+          renderVolunteers(volunteerRequestsData?.data || []);
+        } catch (err) {
+          setError(err.message || "فشل الاتصال بالـ API.");
+        }
+      }
+
+      saveTokenButton.addEventListener("click", () => {
+        const token = authTokenInput.value.trim();
+        if (!token) {
+          setError("رجاءً أدخل رمز JWT صالح.");
+          return;
+        }
+        AUTH_TOKEN = token;
+        localStorage.setItem("hopesteps_admin_token", token);
+        tokenSavedLabel.textContent = "تم حفظ التوكن محلياً.";
+        clearError();
+        loadDashboard();
+      });
+
+        loginButton.addEventListener('click', loginAdmin);
+
+      window.addEventListener("DOMContentLoaded", loadDashboard);
+    </script>
+  </body>
+</html>
