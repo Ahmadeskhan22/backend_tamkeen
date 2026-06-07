@@ -8,6 +8,8 @@ const morgan = require("morgan");
 const compression = require("compression");
 const rateLimit = require("express-rate-limit");
 const nodemailer = require("nodemailer");
+const User = require("./hopesteps-backend/models/User");
+
 require("dotenv").config();
 //const cors = require("cors");
 //app.use(cors());
@@ -90,7 +92,7 @@ if (process.env.NODE_ENV === "development") {
 // ─── Database ──────────────────────────────────────────────────────────────
 const connectDB = async (retryCount = 0, maxRetries = 5) => {
   try {
-    await await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect(process.env.MONGODB_URI);
     console.log("✅ MongoDB Connected Successfully");
   } catch (err) {
     console.error(
