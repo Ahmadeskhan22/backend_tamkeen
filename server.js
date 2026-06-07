@@ -90,9 +90,7 @@ if (process.env.NODE_ENV === "development") {
 // ─── Database ──────────────────────────────────────────────────────────────
 const connectDB = async (retryCount = 0, maxRetries = 5) => {
   try {
-    await mongoose.connect(
-      "mongodb://ahmadmohmmafam417_db_user:zKd1CWmcgtl3s6yV@ac-lftczxz-shard-00-00.cntudye.mongodb.net:27017,ac-lftczxz-shard-00-01.cntudye.mongodb.net:27017,ac-lftczxz-shard-00-02.cntudye.mongodb.net:27017/hopesteps?ssl=true&replicaSet=atlas-534gqq-shard-0&authSource=admin",
-    );
+    await await mongoose.connect(process.env.MONGODB_URI);
     console.log("✅ MongoDB Connected Successfully");
   } catch (err) {
     console.error(

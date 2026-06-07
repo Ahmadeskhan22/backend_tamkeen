@@ -1,553 +1,2242 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>لوحة إدارة تمكين</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { background: #f4f6f9; font-family: system-ui, sans-serif; }
-    .card { background: #fff; border-radius: 20px; border: 1px solid #e8e5f4; }
-    .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 600; }
-    .badge-pending   { background: #fff3e0; color: #c2410c; }
-    .badge-fulfilled { background: #e6f4ea; color: #047857; }
-    .badge-approved  { background: #e8f0fe; color: #1d4ed8; }
-    .badge-rejected  { background: #fde8e8; color: #991b1b; }
-    .badge-other     { background: #f1f0fb; color: #4c1d95; }
-    .stat-value { font-size: 28px; font-weight: 700; color: #1e1b4b; }
-    .stat-label { font-size: 13px; color: #6b7280; }
-    .nav-link { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; font-size: 14px; color: #374151; cursor: pointer; text-decoration: none; }
-    .nav-link:hover, .nav-link.active { background: #ede9fe; color: #4c1d95; }
-    .section { display: none; }
-    .section.active { display: block; }
-    input, select { outline: none; transition: border-color .2s; }
-    input:focus, select:focus { border-color: #4c1d95 !important; }
-    .btn-primary { background: #4c1d95; color: #fff; border: none; border-radius: 10px; padding: 9px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
-    .btn-primary:hover { background: #3b1578; }
-    .btn-outline { background: transparent; border: 1px solid #d1d5db; border-radius: 10px; padding: 7px 14px; font-size: 13px; cursor: pointer; color: #374151; }
-    .btn-outline:hover { background: #f3f4f6; }
-    .btn-approve { background: #4c1d95; color: #fff; border: none; border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
-    .btn-reject  { background: transparent; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: #6b7280; }
-    .spinner { border: 3px solid #e5e7eb; border-top-color: #4c1d95; border-radius: 50%; width: 22px; height: 22px; animation: spin .7s linear infinite; margin: 0 auto; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    table { border-collapse: collapse; width: 100%; }
-    th { text-align: right; font-size: 12px; color: #6b7280; font-weight: 600; padding: 10px 14px; background: #f9fafb; }
-    td { padding: 12px 14px; font-size: 14px; border-top: 1px solid #f3f4f6; }
-    tr:hover td { background: #fafafa; }
-    .db-status { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 6px; }
-    .db-ok  { background: #22c55e; }
-    .db-err { background: #ef4444; }
-    #toastEl { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 12px; font-size: 14px; font-weight: 600; color: #fff; z-index: 9999; display: none; }
-    .toast-ok  { background: #047857; }
-    .toast-err { background: #b91c1c; }
-  </style>
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>لوحة إدارة تمكين</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap");
 
-<div id="toastEl"></div>
+      * {
+        box-sizing: border-box;
+      }
 
-<!-- ─── LAYOUT ──────────────────────────────────────────────── -->
-<div class="flex min-h-screen">
+      body {
+        font-family: "Tajawal", "Segoe UI", sans-serif;
+        background: #f1f4f9;
+        color: #1e293b;
+        min-height: 100vh;
+      }
 
-  <!-- SIDEBAR -->
-  <aside style="width:240px;min-height:100vh;background:#fff;border-left:1px solid #ede9fe;padding:24px 12px;display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
-    <div style="padding:0 8px 20px;">
-      <p style="font-size:11px;color:#9ca3af;letter-spacing:.12em;">TAMKEEN</p>
-      <h1 style="font-size:20px;font-weight:700;color:#4c1d95;margin:4px 0 0;">لوحة الإدارة</h1>
-    </div>
+      /* ── Sidebar ── */
+      #sidebar {
+        width: 270px;
+        min-height: 100vh;
+        background: #fff;
+        border-left: 1px solid #e8edf5;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+      }
 
-    <a class="nav-link active" data-section="overview" onclick="showSection('overview',this)">🏠 نظرة عامة</a>
-    <a class="nav-link" data-section="requests"  onclick="showSection('requests',this)">📩 الطلبات</a>
-    <a class="nav-link" data-section="volunteers" onclick="showSection('volunteers',this)">🙌 المتطوعون</a>
-    <a class="nav-link" data-section="pledges"    onclick="showSection('pledges',this)">💰 التبرعات</a>
-    <a class="nav-link" data-section="users"      onclick="showSection('users',this)">🎓 المستخدمون</a>
+      .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 16px;
+        border-radius: 14px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.18s ease;
+        text-decoration: none;
+      }
+      .nav-link:hover {
+        background: #f1f5ff;
+        color: #4c1d95;
+      }
+      .nav-link.active {
+        background: #ede9fe;
+        color: #4c1d95;
+        font-weight: 700;
+      }
+      .nav-link .icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        background: #f3f4f6;
+        flex-shrink: 0;
+      }
+      .nav-link.active .icon,
+      .nav-link:hover .icon {
+        background: #ddd6fe;
+      }
 
-    <div style="flex:1;"></div>
+      /* ── Cards ── */
+      .stat-card {
+        background: #fff;
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow:
+          0 1px 3px rgba(0, 0, 0, 0.06),
+          0 4px 16px rgba(76, 29, 149, 0.06);
+        border: 1px solid #eef0f7;
+        transition:
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+      .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 32px rgba(76, 29, 149, 0.12);
+      }
 
-    <!-- DB STATUS -->
-    <div style="padding:10px 8px;font-size:12px;color:#6b7280;">
-      قاعدة البيانات
-      <span class="db-status db-err" id="dbDot" title="جارٍ التحقق..."></span>
-      <span id="dbLabel">—</span>
-    </div>
+      /* ── Tables ── */
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .data-table thead tr {
+        background: #f8fafc;
+      }
+      .data-table th {
+        padding: 12px 16px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748b;
+        text-align: right;
+        white-space: nowrap;
+        border-bottom: 1px solid #e8edf5;
+        letter-spacing: 0.03em;
+      }
+      .data-table td {
+        padding: 13px 16px;
+        font-size: 13.5px;
+        color: #334155;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+      }
+      .data-table tbody tr:hover {
+        background: #fafaff;
+      }
+      .data-table tbody tr:last-child td {
+        border-bottom: none;
+      }
 
-    <button class="btn-outline" onclick="doLogout()" style="width:100%;">تسجيل الخروج</button>
-  </aside>
+      /* ── Badges ── */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 12px;
+        border-radius: 99px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .badge-pending {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .badge-review {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+      .badge-approved {
+        background: #d1fae5;
+        color: #065f46;
+      }
+      .badge-fulfilled {
+        background: #e0e7ff;
+        color: #3730a3;
+      }
+      .badge-rejected {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .badge-progress {
+        background: #f0fffe;
+        color: #0e7490;
+      }
 
-  <!-- MAIN -->
-  <main style="flex:1;padding:28px;overflow-y:auto;">
+      /* ── Buttons ── */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 18px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.15s ease;
+      }
+      .btn-primary {
+        background: #4c1d95;
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: #3b1678;
+      }
+      .btn-success {
+        background: #10b981;
+        color: #fff;
+      }
+      .btn-success:hover {
+        background: #059669;
+      }
+      .btn-danger {
+        background: #ef4444;
+        color: #fff;
+      }
+      .btn-danger:hover {
+        background: #dc2626;
+      }
+      .btn-outline {
+        background: transparent;
+        color: #4c1d95;
+        border: 1.5px solid #4c1d95;
+      }
+      .btn-outline:hover {
+        background: #ede9fe;
+      }
+      .btn-sm {
+        padding: 5px 12px;
+        font-size: 12px;
+        border-radius: 9px;
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
 
-    <!-- ── TOP BAR ── -->
-    <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-      <div>
-        <p style="font-size:13px;color:#6b7280;">مرحباً بك</p>
-        <h2 style="font-size:22px;font-weight:700;margin:0;color:#111827;">إدارة منصة تمكين الاجتماعي</h2>
+      /* ── Section panels ── */
+      .panel {
+        background: #fff;
+        border-radius: 20px;
+        box-shadow:
+          0 1px 3px rgba(0, 0, 0, 0.05),
+          0 4px 16px rgba(76, 29, 149, 0.05);
+        border: 1px solid #eef0f7;
+        overflow: hidden;
+      }
+      .panel-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      /* ── Page sections ── */
+      .page-section {
+        display: none;
+      }
+      .page-section.active {
+        display: block;
+      }
+
+      /* ── Login overlay ── */
+      #loginOverlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #loginOverlay.hidden {
+        display: none;
+      }
+
+      /* ── Scrollbar ── */
+      ::-webkit-scrollbar {
+        width: 5px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #c4b5fd;
+        border-radius: 9999px;
+      }
+
+      /* ── Spinner ── */
+      .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2.5px solid rgba(255, 255, 255, 0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        display: inline-block;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ── Toast ── */
+      #toast {
+        position: fixed;
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%) translateY(80px);
+        background: #1e293b;
+        color: #fff;
+        padding: 12px 24px;
+        border-radius: 14px;
+        font-size: 13.5px;
+        font-weight: 500;
+        z-index: 99999;
+        transition: transform 0.3s ease;
+        pointer-events: none;
+        max-width: 360px;
+        text-align: center;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+      }
+      #toast.show {
+        transform: translateX(-50%) translateY(0);
+      }
+      #toast.success {
+        background: #059669;
+      }
+      #toast.error {
+        background: #dc2626;
+      }
+
+      /* ── Modal ── */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 8888;
+        background: rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(3px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .modal-backdrop.hidden {
+        display: none;
+      }
+      .modal-box {
+        background: #fff;
+        border-radius: 24px;
+        width: 100%;
+        max-width: 480px;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+      }
+      .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .modal-body {
+        padding: 24px;
+      }
+      .modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+
+      /* ── Form inputs ── */
+      .form-input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 11px;
+        font-size: 14px;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.15s;
+        background: #fafafa;
+      }
+      .form-input:focus {
+        border-color: #7c3aed;
+        background: #fff;
+      }
+      .form-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 6px;
+      }
+
+      /* ── Urgency indicators ── */
+      .urgency-critical {
+        color: #dc2626;
+        font-weight: 700;
+      }
+      .urgency-high {
+        color: #ea580c;
+        font-weight: 600;
+      }
+      .urgency-medium {
+        color: #ca8a04;
+      }
+      .urgency-low {
+        color: #16a34a;
+      }
+
+      /* ── Responsive ── */
+      @media (max-width: 768px) {
+        #sidebar {
+          display: none;
+        }
+        #mobileNav {
+          display: flex;
+        }
+      }
+      #mobileNav {
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- ══════════════════════════════════════
+         LOGIN OVERLAY
+    ══════════════════════════════════════ -->
+    <div id="loginOverlay">
+      <div style="width: 100%; max-width: 400px; padding: 20px">
+        <div
+          style="
+            background: #fff;
+            border-radius: 24px;
+            padding: 36px;
+            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.3);
+          "
+        >
+          <div style="text-align: center; margin-bottom: 28px">
+            <div
+              style="
+                width: 64px;
+                height: 64px;
+                background: linear-gradient(135deg, #4c1d95, #7c3aed);
+                border-radius: 18px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 28px;
+                margin-bottom: 12px;
+              "
+            >
+              🌟
+            </div>
+            <h2
+              style="
+                font-size: 22px;
+                font-weight: 800;
+                color: #1e293b;
+                margin: 0 0 4px;
+              "
+            >
+              تمكين — لوحة الإدارة
+            </h2>
+            <p style="font-size: 13px; color: #64748b; margin: 0">
+              سجّل دخولك للمتابعة
+            </p>
+          </div>
+
+          <div
+            id="loginError"
+            style="
+              display: none;
+              background: #fee2e2;
+              color: #991b1b;
+              border-radius: 10px;
+              padding: 10px 14px;
+              font-size: 13px;
+              margin-bottom: 16px;
+            "
+          ></div>
+
+          <div style="margin-bottom: 14px">
+            <label class="form-label">البريد الإلكتروني</label>
+            <input
+              id="loginEmail"
+              type="email"
+              class="form-input"
+              placeholder="admin@tamkeen.jo"
+            />
+          </div>
+          <div style="margin-bottom: 20px">
+            <label class="form-label">كلمة المرور</label>
+            <input
+              id="loginPassword"
+              type="password"
+              class="form-input"
+              placeholder="••••••••"
+            />
+          </div>
+
+          <button
+            id="loginBtn"
+            class="btn btn-primary"
+            style="width: 100%; justify-content: center; padding: 12px"
+            onclick="doLogin()"
+          >
+            <span id="loginBtnText">تسجيل الدخول</span>
+          </button>
+
+          <div
+            style="
+              margin-top: 16px;
+              border-top: 1px solid #f1f5f9;
+              padding-top: 16px;
+            "
+          >
+            <label class="form-label" style="font-size: 11px"
+              >أو أدخل رمز JWT مباشرة</label
+            >
+            <div style="display: flex; gap: 8px">
+              <input
+                id="jwtInput"
+                type="text"
+                class="form-input"
+                placeholder="Bearer token..."
+                style="flex: 1"
+              />
+              <button
+                class="btn btn-outline"
+                onclick="saveJWT()"
+                style="flex-shrink: 0"
+              >
+                حفظ
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div style="font-size:13px;color:#6b7280;" id="loggedInUser">غير مسجّل</div>
-    </header>
+    </div>
 
-    <!-- ── LOGIN PANEL (shown when not authenticated) ── -->
-    <div id="loginPanel" class="card" style="max-width:460px;margin:0 auto;padding:28px;">
-      <h3 style="font-size:16px;font-weight:700;margin:0 0 20px;color:#111827;">تسجيل دخول المشرف</h3>
+    <!-- ══════════════════════════════════════
+         TOAST NOTIFICATION
+    ══════════════════════════════════════ -->
+    <div id="toast"></div>
 
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <input id="loginEmail"    type="email"    placeholder="البريد الإلكتروني"
-               style="padding:10px 14px;border:1px solid #d1d5db;border-radius:10px;font-size:14px;width:100%;box-sizing:border-box;" />
-        <input id="loginPassword" type="password" placeholder="كلمة المرور"
-               style="padding:10px 14px;border:1px solid #d1d5db;border-radius:10px;font-size:14px;width:100%;box-sizing:border-box;" />
+    <!-- ══════════════════════════════════════
+         STATUS CHANGE MODAL
+    ══════════════════════════════════════ -->
+    <div id="statusModal" class="modal-backdrop hidden">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 style="font-size: 16px; font-weight: 700; margin: 0">
+            تغيير حالة الطلب
+          </h3>
+          <button
+            onclick="closeModal()"
+            style="
+              background: none;
+              border: none;
+              font-size: 20px;
+              cursor: pointer;
+              color: #94a3b8;
+            "
+          >
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <p
+            id="modalRequestTitle"
+            style="font-size: 14px; color: #475569; margin: 0 0 16px"
+          ></p>
+          <label class="form-label">الحالة الجديدة</label>
+          <select
+            id="modalStatus"
+            class="form-input"
+            style="margin-bottom: 14px"
+          >
+            <option value="under_review">قيد المراجعة</option>
+            <option value="approved">تمت الموافقة</option>
+            <option value="in_progress">جارٍ المعالجة</option>
+            <option value="fulfilled">تم التلبية</option>
+            <option value="rejected">مرفوض</option>
+            <option value="closed">مغلق</option>
+          </select>
+          <label class="form-label">ملاحظة المراجعة (اختياري)</label>
+          <textarea
+            id="modalNote"
+            class="form-input"
+            rows="3"
+            placeholder="أضف ملاحظة للطالب..."
+          ></textarea>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+          <button
+            id="modalSaveBtn"
+            class="btn btn-primary"
+            onclick="saveStatus()"
+          >
+            حفظ التغيير
+          </button>
+        </div>
+      </div>
+    </div>
 
-        <div style="display:flex;align-items:center;gap:8px;">
-          <button class="btn-primary" onclick="loginAdmin()" id="loginBtn" style="flex:1;">دخول</button>
+    <!-- ══════════════════════════════════════
+         VOLUNTEER DETAILS MODAL
+    ══════════════════════════════════════ -->
+    <div id="volunteerModal" class="modal-backdrop hidden">
+      <div class="modal-box" style="max-width: 520px">
+        <div class="modal-header">
+          <h3 style="font-size: 16px; font-weight: 700; margin: 0">
+            تفاصيل المتطوع
+          </h3>
+          <button
+            onclick="closeVolunteerModal()"
+            style="
+              background: none;
+              border: none;
+              font-size: 20px;
+              cursor: pointer;
+              color: #94a3b8;
+            "
+          >
+            ✕
+          </button>
+        </div>
+        <div class="modal-body" id="volunteerModalBody"></div>
+        <div class="modal-footer" id="volunteerModalFooter"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         APP SHELL
+    ══════════════════════════════════════ -->
+    <div style="display: flex; min-height: 100vh">
+      <!-- Sidebar -->
+      <aside id="sidebar">
+        <div style="padding: 24px 20px 16px">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              margin-bottom: 6px;
+            "
+          >
+            <div
+              style="
+                width: 42px;
+                height: 42px;
+                background: linear-gradient(135deg, #4c1d95, #7c3aed);
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+                flex-shrink: 0;
+              "
+            >
+              🌟
+            </div>
+            <div>
+              <p
+                style="
+                  margin: 0;
+                  font-size: 11px;
+                  color: #94a3b8;
+                  letter-spacing: 0.08em;
+                  text-transform: uppercase;
+                "
+              >
+                Tamkeen
+              </p>
+              <h1
+                style="
+                  margin: 0;
+                  font-size: 16px;
+                  font-weight: 800;
+                  color: #4c1d95;
+                "
+              >
+                لوحة الإدارة
+              </h1>
+            </div>
+          </div>
         </div>
 
-        <div style="border-top:1px solid #f3f4f6;padding-top:12px;">
-          <p style="font-size:12px;color:#9ca3af;margin:0 0 8px;">أو أدخل JWT مباشرة:</p>
+        <div style="padding: 0 12px; flex: 1">
+          <p
+            style="
+              font-size: 10.5px;
+              font-weight: 700;
+              color: #94a3b8;
+              text-transform: uppercase;
+              letter-spacing: 0.1em;
+              padding: 12px 4px 6px;
+            "
+          >
+            القائمة الرئيسية
+          </p>
+          <nav
+            id="navLinks"
+            style="display: flex; flex-direction: column; gap: 3px"
+          >
+            <a
+              class="nav-link active"
+              data-section="overview"
+              onclick="switchSection('overview')"
+            >
+              <span class="icon">🏠</span> نظرة عامة
+            </a>
+            <a
+              class="nav-link"
+              data-section="requests"
+              onclick="switchSection('requests')"
+            >
+              <span class="icon">📋</span> الطلبات
+              <span
+                id="navBadgeRequests"
+                style="
+                  margin-right: auto;
+                  background: #fef3c7;
+                  color: #92400e;
+                  font-size: 11px;
+                  font-weight: 700;
+                  padding: 2px 8px;
+                  border-radius: 99px;
+                "
+              ></span>
+            </a>
+            <a
+              class="nav-link"
+              data-section="volunteers"
+              onclick="switchSection('volunteers')"
+            >
+              <span class="icon">🤝</span> المتطوعون
+            </a>
+            <a
+              class="nav-link"
+              data-section="students"
+              onclick="switchSection('students')"
+            >
+              <span class="icon">🎓</span> الطلاب
+            </a>
+            <a
+              class="nav-link"
+              data-section="donors"
+              onclick="switchSection('donors')"
+            >
+              <span class="icon">💎</span> المتبرعون
+            </a>
+          </nav>
+        </div>
+
+        <div style="padding: 16px 20px 24px">
+          <div
+            style="
+              background: linear-gradient(135deg, #4c1d95, #7c3aed);
+              border-radius: 16px;
+              padding: 18px;
+              color: #fff;
+              margin-bottom: 14px;
+            "
+          >
+            <p
+              style="
+                margin: 0;
+                font-size: 12px;
+                opacity: 0.85;
+                font-weight: 600;
+              "
+            >
+              منصة تمكين الاجتماعي
+            </p>
+            <p
+              style="
+                margin: 6px 0 0;
+                font-size: 11.5px;
+                opacity: 0.7;
+                line-height: 1.6;
+              "
+            >
+              ربط الطلاب بالمتطوعين والمتبرعين لتحقيق مستقبل أفضل.
+            </p>
+          </div>
+          <div
+            id="adminInfo"
+            style="
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              padding: 10px;
+              border-radius: 12px;
+              background: #f8fafc;
+              border: 1px solid #eef0f7;
+            "
+          >
+            <div
+              id="adminAvatar"
+              style="
+                width: 36px;
+                height: 36px;
+                background: #ddd6fe;
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 16px;
+                font-weight: 700;
+                color: #4c1d95;
+                flex-shrink: 0;
+              "
+            >
+              م
+            </div>
+            <div style="overflow: hidden">
+              <p
+                id="adminName"
+                style="
+                  margin: 0;
+                  font-size: 13px;
+                  font-weight: 700;
+                  color: #1e293b;
+                  white-space: nowrap;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                "
+              >
+                المشرف
+              </p>
+              <p
+                id="adminEmail"
+                style="
+                  margin: 0;
+                  font-size: 11px;
+                  color: #94a3b8;
+                  white-space: nowrap;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                "
+              >
+                —
+              </p>
+            </div>
+          </div>
+          <button
+            class="btn btn-outline"
+            style="width: 100%; justify-content: center; margin-top: 10px"
+            onclick="doLogout()"
+          >
+            🚪 تسجيل الخروج
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main -->
+      <main style="flex: 1; overflow-y: auto; padding: 28px 24px; min-width: 0">
+        <!-- Top bar -->
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+          "
+        >
+          <div>
+            <h2
+              id="pageTitle"
+              style="
+                margin: 0;
+                font-size: 22px;
+                font-weight: 800;
+                color: #1e293b;
+              "
+            >
+              نظرة عامة
+            </h2>
+            <p
+              id="pageSubtitle"
+              style="margin: 4px 0 0; font-size: 13px; color: #64748b"
+            >
+              ملخص شامل لنشاط المنصة
+            </p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <button
+              onclick="refreshCurrentSection()"
+              class="btn btn-outline btn-sm"
+              style="font-size: 13px"
+            >
+              🔄 تحديث
+            </button>
+            <div
+              id="connectionStatus"
+              style="
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 14px;
+                border-radius: 99px;
+                background: #d1fae5;
+                color: #065f46;
+                font-size: 12px;
+                font-weight: 600;
+              "
+            >
+              <span
+                style="
+                  width: 7px;
+                  height: 7px;
+                  background: #10b981;
+                  border-radius: 50%;
+                  display: inline-block;
+                "
+              ></span>
+              متصل
+            </div>
+          </div>
+        </div>
+
+        <!-- ── OVERVIEW ── -->
+        <section id="section-overview" class="page-section active">
+          <!-- Stat cards -->
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+              gap: 18px;
+              margin-bottom: 24px;
+            "
+          >
+            <div class="stat-card">
+              <div
+                style="
+                  display: flex;
+                  align-items: flex-start;
+                  justify-content: space-between;
+                  gap: 12px;
+                "
+              >
+                <div>
+                  <p
+                    style="
+                      margin: 0;
+                      font-size: 12.5px;
+                      color: #64748b;
+                      font-weight: 600;
+                    "
+                  >
+                    إجمالي الطلاب
+                  </p>
+                  <h3
+                    id="st-students"
+                    style="
+                      margin: 10px 0 4px;
+                      font-size: 30px;
+                      font-weight: 800;
+                      color: #1e293b;
+                    "
+                  >
+                    —
+                  </h3>
+                  <p style="margin: 0; font-size: 11.5px; color: #94a3b8">
+                    مسجّل في المنصة
+                  </p>
+                </div>
+                <div
+                  style="
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 14px;
+                    background: #ede9fe;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 22px;
+                    flex-shrink: 0;
+                  "
+                >
+                  🎓
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div
+                style="
+                  display: flex;
+                  align-items: flex-start;
+                  justify-content: space-between;
+                  gap: 12px;
+                "
+              >
+                <div>
+                  <p
+                    style="
+                      margin: 0;
+                      font-size: 12.5px;
+                      color: #64748b;
+                      font-weight: 600;
+                    "
+                  >
+                    المتطوعون
+                  </p>
+                  <h3
+                    id="st-volunteers"
+                    style="
+                      margin: 10px 0 4px;
+                      font-size: 30px;
+                      font-weight: 800;
+                      color: #1e293b;
+                    "
+                  >
+                    —
+                  </h3>
+                  <p style="margin: 0; font-size: 11.5px; color: #94a3b8">
+                    متطوع نشط
+                  </p>
+                </div>
+                <div
+                  style="
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 14px;
+                    background: #d1fae5;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 22px;
+                    flex-shrink: 0;
+                  "
+                >
+                  🤝
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div
+                style="
+                  display: flex;
+                  align-items: flex-start;
+                  justify-content: space-between;
+                  gap: 12px;
+                "
+              >
+                <div>
+                  <p
+                    style="
+                      margin: 0;
+                      font-size: 12.5px;
+                      color: #64748b;
+                      font-weight: 600;
+                    "
+                  >
+                    المتبرعون
+                  </p>
+                  <h3
+                    id="st-donors"
+                    style="
+                      margin: 10px 0 4px;
+                      font-size: 30px;
+                      font-weight: 800;
+                      color: #1e293b;
+                    "
+                  >
+                    —
+                  </h3>
+                  <p style="margin: 0; font-size: 11.5px; color: #94a3b8">
+                    متبرع مسجّل
+                  </p>
+                </div>
+                <div
+                  style="
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 14px;
+                    background: #fef3c7;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 22px;
+                    flex-shrink: 0;
+                  "
+                >
+                  💎
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div
+                style="
+                  display: flex;
+                  align-items: flex-start;
+                  justify-content: space-between;
+                  gap: 12px;
+                "
+              >
+                <div>
+                  <p
+                    style="
+                      margin: 0;
+                      font-size: 12.5px;
+                      color: #64748b;
+                      font-weight: 600;
+                    "
+                  >
+                    الطلبات المعلّقة
+                  </p>
+                  <h3
+                    id="st-pending"
+                    style="
+                      margin: 10px 0 4px;
+                      font-size: 30px;
+                      font-weight: 800;
+                      color: #ea580c;
+                    "
+                  >
+                    —
+                  </h3>
+                  <p style="margin: 0; font-size: 11.5px; color: #94a3b8">
+                    بانتظار المراجعة
+                  </p>
+                </div>
+                <div
+                  style="
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 14px;
+                    background: #ffedd5;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 22px;
+                    flex-shrink: 0;
+                  "
+                >
+                  📩
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div
+                style="
+                  display: flex;
+                  align-items: flex-start;
+                  justify-content: space-between;
+                  gap: 12px;
+                "
+              >
+                <div>
+                  <p
+                    style="
+                      margin: 0;
+                      font-size: 12.5px;
+                      color: #64748b;
+                      font-weight: 600;
+                    "
+                  >
+                    إجمالي الطلبات
+                  </p>
+                  <h3
+                    id="st-total"
+                    style="
+                      margin: 10px 0 4px;
+                      font-size: 30px;
+                      font-weight: 800;
+                      color: #1e293b;
+                    "
+                  >
+                    —
+                  </h3>
+                  <p style="margin: 0; font-size: 11.5px; color: #94a3b8">
+                    كل الطلبات
+                  </p>
+                </div>
+                <div
+                  style="
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 14px;
+                    background: #dbeafe;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 22px;
+                    flex-shrink: 0;
+                  "
+                >
+                  📋
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div
+                style="
+                  display: flex;
+                  align-items: flex-start;
+                  justify-content: space-between;
+                  gap: 12px;
+                "
+              >
+                <div>
+                  <p
+                    style="
+                      margin: 0;
+                      font-size: 12.5px;
+                      color: #64748b;
+                      font-weight: 600;
+                    "
+                  >
+                    تم التلبية
+                  </p>
+                  <h3
+                    id="st-fulfilled"
+                    style="
+                      margin: 10px 0 4px;
+                      font-size: 30px;
+                      font-weight: 800;
+                      color: #059669;
+                    "
+                  >
+                    —
+                  </h3>
+                  <p style="margin: 0; font-size: 11.5px; color: #94a3b8">
+                    طلب مكتمل
+                  </p>
+                </div>
+                <div
+                  style="
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 14px;
+                    background: #d1fae5;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 22px;
+                    flex-shrink: 0;
+                  "
+                >
+                  ✅
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div
+                style="
+                  display: flex;
+                  align-items: flex-start;
+                  justify-content: space-between;
+                  gap: 12px;
+                "
+              >
+                <div>
+                  <p
+                    style="
+                      margin: 0;
+                      font-size: 12.5px;
+                      color: #64748b;
+                      font-weight: 600;
+                    "
+                  >
+                    طلبات عاجلة
+                  </p>
+                  <h3
+                    id="st-urgent"
+                    style="
+                      margin: 10px 0 4px;
+                      font-size: 30px;
+                      font-weight: 800;
+                      color: #dc2626;
+                    "
+                  >
+                    —
+                  </h3>
+                  <p style="margin: 0; font-size: 11.5px; color: #94a3b8">
+                    تحتاج تدخلاً سريعاً
+                  </p>
+                </div>
+                <div
+                  style="
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 14px;
+                    background: #fee2e2;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 22px;
+                    flex-shrink: 0;
+                  "
+                >
+                  🚨
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div
+                style="
+                  display: flex;
+                  align-items: flex-start;
+                  justify-content: space-between;
+                  gap: 12px;
+                "
+              >
+                <div>
+                  <p
+                    style="
+                      margin: 0;
+                      font-size: 12.5px;
+                      color: #64748b;
+                      font-weight: 600;
+                    "
+                  >
+                    إجمالي التبرعات
+                  </p>
+                  <h3
+                    id="st-donations"
+                    style="
+                      margin: 10px 0 4px;
+                      font-size: 24px;
+                      font-weight: 800;
+                      color: #1e293b;
+                    "
+                  >
+                    —
+                  </h3>
+                  <p style="margin: 0; font-size: 11.5px; color: #94a3b8">
+                    بالدولار الأمريكي
+                  </p>
+                </div>
+                <div
+                  style="
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 14px;
+                    background: #f0fff4;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 22px;
+                    flex-shrink: 0;
+                  "
+                >
+                  💰
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Requests Table -->
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3 style="margin: 0; font-size: 16px; font-weight: 700">
+                  أحدث الطلبات
+                </h3>
+                <p style="margin: 4px 0 0; font-size: 12px; color: #64748b">
+                  آخر 10 طلبات مُضافة على المنصة
+                </p>
+              </div>
+              <button
+                class="btn btn-primary btn-sm"
+                onclick="switchSection('requests')"
+              >
+                عرض الكل ←
+              </button>
+            </div>
+            <div style="overflow-x: auto">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>العنوان</th>
+                    <th>النوع</th>
+                    <th>الأولوية</th>
+                    <th>الحالة</th>
+                    <th>التاريخ</th>
+                  </tr>
+                </thead>
+                <tbody id="overviewRecentBody">
+                  <tr>
+                    <td
+                      colspan="5"
+                      style="text-align: center; padding: 32px; color: #94a3b8"
+                    >
+                      جارٍ التحميل...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── REQUESTS ── -->
+        <section id="section-requests" class="page-section">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3 style="margin: 0; font-size: 16px; font-weight: 700">
+                  إدارة الطلبات
+                </h3>
+                <p style="margin: 4px 0 0; font-size: 12px; color: #64748b">
+                  مراجعة وتغيير حالة طلبات الطلاب
+                </p>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  gap: 10px;
+                  align-items: center;
+                  flex-wrap: wrap;
+                "
+              >
+                <select
+                  id="requestStatusFilter"
+                  class="form-input"
+                  style="width: auto; padding: 7px 12px; font-size: 13px"
+                  onchange="filterRequests()"
+                >
+                  <option value="">كل الحالات</option>
+                  <option value="pending">معلّق</option>
+                  <option value="under_review">قيد المراجعة</option>
+                  <option value="approved">تمت الموافقة</option>
+                  <option value="in_progress">جارٍ المعالجة</option>
+                  <option value="fulfilled">تم التلبية</option>
+                  <option value="rejected">مرفوض</option>
+                </select>
+                <select
+                  id="requestTypeFilter"
+                  class="form-input"
+                  style="width: auto; padding: 7px 12px; font-size: 13px"
+                  onchange="filterRequests()"
+                >
+                  <option value="">كل الأنواع</option>
+                  <option value="stationery">أدوات مدرسية</option>
+                  <option value="clothes">زي مدرسي</option>
+                  <option value="tutoring">دروس تطوعية</option>
+                  <option value="food">وجبات</option>
+                  <option value="psychological">دعم نفسي</option>
+                  <option value="financial">مالي</option>
+                  <option value="other">أخرى</option>
+                </select>
+              </div>
+            </div>
+            <div style="overflow-x: auto">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>العنوان</th>
+                    <th>النوع</th>
+                    <th>الأولوية</th>
+                    <th>الحالة</th>
+                    <th>التاريخ</th>
+                    <th>إجراء</th>
+                  </tr>
+                </thead>
+                <tbody id="requestsTableBody">
+                  <tr>
+                    <td
+                      colspan="6"
+                      style="text-align: center; padding: 40px; color: #94a3b8"
+                    >
+                      جارٍ التحميل...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div
+              id="requestsPagination"
+              style="
+                padding: 16px 24px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                border-top: 1px solid #f1f5f9;
+                flex-wrap: wrap;
+              "
+            >
+              <p
+                id="requestsCount"
+                style="margin: 0; font-size: 13px; color: #64748b"
+              ></p>
+              <div style="display: flex; gap: 8px" id="paginationBtns"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── VOLUNTEERS ── -->
+        <section id="section-volunteers" class="page-section">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3 style="margin: 0; font-size: 16px; font-weight: 700">
+                  إدارة المتطوعين
+                </h3>
+                <p style="margin: 4px 0 0; font-size: 12px; color: #64748b">
+                  مراجعة وقبول طلبات التطوع
+                </p>
+              </div>
+              <select
+                id="volunteerFilter"
+                class="form-input"
+                style="width: auto; padding: 7px 12px; font-size: 13px"
+                onchange="loadVolunteers()"
+              >
+                <option value="">الكل</option>
+                <option value="pending">بانتظار الموافقة</option>
+                <option value="approved">مقبول</option>
+              </select>
+            </div>
+            <div id="volunteersContainer">
+              <div style="text-align: center; padding: 48px; color: #94a3b8">
+                جارٍ التحميل...
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── STUDENTS ── -->
+        <section id="section-students" class="page-section">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3 style="margin: 0; font-size: 16px; font-weight: 700">
+                  قائمة الطلاب
+                </h3>
+                <p style="margin: 4px 0 0; font-size: 12px; color: #64748b">
+                  الطلاب المسجلون في المنصة
+                </p>
+              </div>
+            </div>
+            <div style="overflow-x: auto">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>الاسم</th>
+                    <th>البريد</th>
+                    <th>الهاتف</th>
+                    <th>الحالة</th>
+                    <th>تاريخ التسجيل</th>
+                    <th>إجراء</th>
+                  </tr>
+                </thead>
+                <tbody id="studentsTableBody">
+                  <tr>
+                    <td
+                      colspan="6"
+                      style="text-align: center; padding: 40px; color: #94a3b8"
+                    >
+                      جارٍ التحميل...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── DONORS ── -->
+        <section id="section-donors" class="page-section">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3 style="margin: 0; font-size: 16px; font-weight: 700">
+                  قائمة المتبرعين
+                </h3>
+                <p style="margin: 4px 0 0; font-size: 12px; color: #64748b">
+                  المتبرعون المسجلون في المنصة
+                </p>
+              </div>
+            </div>
+            <div style="overflow-x: auto">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>الاسم</th>
+                    <th>البريد</th>
+                    <th>الهاتف</th>
+                    <th>الحالة</th>
+                    <th>تاريخ التسجيل</th>
+                    <th>إجراء</th>
+                  </tr>
+                </thead>
+                <tbody id="donorsTableBody">
+                  <tr>
+                    <td
+                      colspan="6"
+                      style="text-align: center; padding: 40px; color: #94a3b8"
+                    >
+                      جارٍ التحميل...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+          style="
+            margin-top: 32px;
+            text-align: center;
+            padding: 16px;
+            font-size: 12px;
+            color: #94a3b8;
+          "
+        >
+          منصة تمكين الاجتماعي © 2026 — جميع الحقوق محفوظة
+        </footer>
+      </main>
+    </div>
+    <!-- /app shell -->
+
+    <script>
+      // ═══════════════════════════════════════════════════════════
+      //  CONFIG
+      // ═══════════════════════════════════════════════════════════
+      const API_BASE = "https://backendtamkeen-production.up.railway.app/api";
+      const TOKEN_KEY = "hopesteps_admin_token";
+
+      // ═══════════════════════════════════════════════════════════
+      //  STATE
+      // ═══════════════════════════════════════════════════════════
+      let AUTH_TOKEN = localStorage.getItem(TOKEN_KEY) || "";
+      let currentSection = "overview";
+      let allRequests = []; // full list for client-side filter
+      let requestsPage = 1;
+      const PAGE_SIZE = 15;
+      let selectedRequestId = null;
+
+      // ═══════════════════════════════════════════════════════════
+      //  HELPERS
+      // ═══════════════════════════════════════════════════════════
+      function toast(msg, type = "info") {
+        const el = document.getElementById("toast");
+        el.textContent = msg;
+        el.className = type + " show";
+        setTimeout(() => (el.className = ""), 3000);
+      }
+
+      function fmt(date) {
+        if (!date) return "—";
+        try {
+          return new Date(date).toLocaleDateString("ar-EG", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          });
+        } catch {
+          return "—";
+        }
+      }
+
+      function statusBadge(status) {
+        const map = {
+          pending: ["badge-pending", "معلّق"],
+          under_review: ["badge-review", "قيد المراجعة"],
+          approved: ["badge-approved", "تمت الموافقة"],
+          in_progress: ["badge-progress", "جارٍ المعالجة"],
+          fulfilled: ["badge-fulfilled", "تم التلبية"],
+          rejected: ["badge-rejected", "مرفوض"],
+          closed: ["badge-rejected", "مغلق"],
+        };
+        const [cls, label] = map[status] || ["badge-review", status];
+        return `<span class="badge ${cls}">${label}</span>`;
+      }
+
+      function typeLabel(type) {
+        const map = {
+          stationery: "أدوات مدرسية",
+          clothes: "زي مدرسي",
+          tutoring: "دروس تطوعية",
+          food: "وجبات",
+          psychological: "دعم نفسي",
+          financial: "مالي",
+          academic: "أكاديمي",
+          housing: "سكن",
+          other: "أخرى",
+        };
+        return map[type] || type;
+      }
+
+      function urgencyLabel(u) {
+        const map = {
+          critical: ["🔴", "حرج"],
+          high: ["🟠", "عاجل"],
+          medium: ["🟡", "متوسط"],
+          low: ["🟢", "منخفض"],
+        };
+        const [icon, label] = map[u] || ["⚪", u];
+        return `<span class="urgency-${u}">${icon} ${label}</span>`;
+      }
+
+      async function api(path, opts = {}) {
+        const resp = await fetch(`${API_BASE}${path}`, {
+          ...opts,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${AUTH_TOKEN}`,
+            ...(opts.headers || {}),
+          },
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok) throw new Error(data.message || resp.statusText);
+        return data;
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      //  AUTH
+      // ═══════════════════════════════════════════════════════════
+      async function doLogin() {
+        const email = document.getElementById("loginEmail").value.trim();
+        const password = document.getElementById("loginPassword").value;
+        const errEl = document.getElementById("loginError");
+        const btn = document.getElementById("loginBtn");
+        const btnTxt = document.getElementById("loginBtnText");
+
+        errEl.style.display = "none";
+        if (!email || !password) {
+          errEl.textContent = "الرجاء إدخال البريد وكلمة المرور.";
+          errEl.style.display = "block";
+          return;
+        }
+
+        btn.disabled = true;
+        btnTxt.textContent = "جارٍ التحقق...";
+
+        try {
+          const data = await api("/auth/login", {
+            method: "POST",
+            body: JSON.stringify({ email, password }),
+            headers: {},
+          });
+          AUTH_TOKEN = data.token;
+          localStorage.setItem(TOKEN_KEY, AUTH_TOKEN);
+
+          if (data.user) {
+            const n = data.user.name || "المشرف";
+            document.getElementById("adminName").textContent = n;
+            document.getElementById("adminEmail").textContent =
+              data.user.email || "";
+            document.getElementById("adminAvatar").textContent = n[0] || "م";
+          }
+
+          document.getElementById("loginOverlay").classList.add("hidden");
+          toast("مرحباً! تم تسجيل الدخول بنجاح.", "success");
+          loadSection("overview");
+        } catch (err) {
+          errEl.textContent = err.message || "بيانات الدخول غير صحيحة.";
+          errEl.style.display = "block";
+        } finally {
+          btn.disabled = false;
+          btnTxt.textContent = "تسجيل الدخول";
+        }
+      }
+
+      function saveJWT() {
+        const v = document.getElementById("jwtInput").value.trim();
+        if (!v) return;
+        AUTH_TOKEN = v.replace(/^Bearer\s+/i, "");
+        localStorage.setItem(TOKEN_KEY, AUTH_TOKEN);
+        document.getElementById("loginOverlay").classList.add("hidden");
+        toast("تم حفظ الرمز.", "success");
+        loadSection("overview");
+      }
+
+      function doLogout() {
+        localStorage.removeItem(TOKEN_KEY);
+        AUTH_TOKEN = "";
+        location.reload();
+      }
+
+      // Enter key support on login form
+      ["loginEmail", "loginPassword"].forEach((id) => {
+        document.getElementById(id).addEventListener("keydown", (e) => {
+          if (e.key === "Enter") doLogin();
+        });
+      });
+
+      // ═══════════════════════════════════════════════════════════
+      //  NAVIGATION
+      // ═══════════════════════════════════════════════════════════
+      const PAGE_META = {
+        overview: { title: "نظرة عامة", subtitle: "ملخص شامل لنشاط المنصة" },
+        requests: {
+          title: "إدارة الطلبات",
+          subtitle: "مراجعة وتعديل حالة طلبات الطلاب",
+        },
+        volunteers: {
+          title: "إدارة المتطوعين",
+          subtitle: "قبول أو رفض طلبات التطوع",
+        },
+        students: {
+          title: "قائمة الطلاب",
+          subtitle: "الطلاب المسجلون في المنصة",
+        },
+        donors: {
+          title: "قائمة المتبرعين",
+          subtitle: "المتبرعون المسجلون في المنصة",
+        },
+      };
+
+      function switchSection(name) {
+        document
+          .querySelectorAll(".page-section")
+          .forEach((s) => s.classList.remove("active"));
+        document.getElementById(`section-${name}`).classList.add("active");
+
+        document.querySelectorAll(".nav-link").forEach((l) => {
+          l.classList.toggle("active", l.dataset.section === name);
+        });
+
+        currentSection = name;
+        document.getElementById("pageTitle").textContent =
+          PAGE_META[name]?.title || name;
+        document.getElementById("pageSubtitle").textContent =
+          PAGE_META[name]?.subtitle || "";
+
+        loadSection(name);
+      }
+
+      function refreshCurrentSection() {
+        loadSection(currentSection);
+      }
+
+      function loadSection(name) {
+        switch (name) {
+          case "overview":
+            loadOverview();
+            break;
+          case "requests":
+            loadRequests();
+            break;
+          case "volunteers":
+            loadVolunteers();
+            break;
+          case "students":
+            loadUsers("student");
+            break;
+          case "donors":
+            loadUsers("donor");
+            break;
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      //  OVERVIEW
+      // ═══════════════════════════════════════════════════════════
+      async function loadOverview() {
+        try {
+          const data = await api("/admin/dashboard");
+          const s = data?.data?.stats || {};
+          document.getElementById("st-students").textContent = (
+            s.totalStudents ?? "—"
+          ).toLocaleString("ar-EG");
+          document.getElementById("st-volunteers").textContent = (
+            s.totalVolunteers ?? "—"
+          ).toLocaleString("ar-EG");
+          document.getElementById("st-donors").textContent = (
+            s.totalDonors ?? "—"
+          ).toLocaleString("ar-EG");
+          document.getElementById("st-pending").textContent = (
+            s.pendingRequests ?? "—"
+          ).toLocaleString("ar-EG");
+          document.getElementById("st-total").textContent = (
+            s.totalRequests ?? "—"
+          ).toLocaleString("ar-EG");
+          document.getElementById("st-fulfilled").textContent = (
+            s.fulfilledRequests ?? "—"
+          ).toLocaleString("ar-EG");
+          document.getElementById("st-urgent").textContent = (
+            s.urgentRequests ?? "—"
+          ).toLocaleString("ar-EG");
+          document.getElementById("st-donations").textContent =
+            `$ ${Number(s.totalDonationsAmount || 0).toLocaleString("ar-EG")}`;
+
+          // pending nav badge
+          const pb = document.getElementById("navBadgeRequests");
+          pb.textContent = s.pendingRequests > 0 ? s.pendingRequests : "";
+
+          // recent requests table
+          const rows = data?.data?.recentRequests || [];
+          const tbody = document.getElementById("overviewRecentBody");
+          if (!rows.length) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:#94a3b8;">لا توجد طلبات حتى الآن</td></tr>`;
+            return;
+          }
+          tbody.innerHTML = rows
+            .map(
+              (r) => `
+          <tr>
+            <td style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.title || "—"}</td>
+            <td>${typeLabel(r.type)}</td>
+            <td>${urgencyLabel(r.urgency)}</td>
+            <td>${statusBadge(r.status)}</td>
+            <td style="color:#94a3b8;">${fmt(r.createdAt)}</td>
+          </tr>
+        `,
+            )
+            .join("");
+        } catch (err) {
+          toast(err.message || "فشل تحميل الإحصائيات", "error");
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      //  REQUESTS
+      // ═══════════════════════════════════════════════════════════
+      async function loadRequests() {
+        const tbody = document.getElementById("requestsTableBody");
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#94a3b8;">جارٍ التحميل...</td></tr>`;
+        try {
+          // Fetch a large batch to enable client-side filtering & pagination
+          const data = await api("/requests?limit=200&status=");
+          allRequests = data?.data || [];
+          requestsPage = 1;
+          renderRequests();
+        } catch (err) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#dc2626;">${err.message}</td></tr>`;
+        }
+      }
+
+      function filterRequests() {
+        requestsPage = 1;
+        renderRequests();
+      }
+
+      function renderRequests() {
+        const statusF = document.getElementById("requestStatusFilter").value;
+        const typeF = document.getElementById("requestTypeFilter").value;
+
+        let filtered = allRequests.filter((r) => {
+          if (statusF && r.status !== statusF) return false;
+          if (typeF && r.type !== typeF) return false;
+          return true;
+        });
+
+        const total = filtered.length;
+        const start = (requestsPage - 1) * PAGE_SIZE;
+        const page = filtered.slice(start, start + PAGE_SIZE);
+
+        document.getElementById("requestsCount").textContent =
+          `إجمالي ${total.toLocaleString("ar-EG")} طلب`;
+
+        const tbody = document.getElementById("requestsTableBody");
+        if (!page.length) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#94a3b8;">لا توجد طلبات مطابقة</td></tr>`;
+        } else {
+          tbody.innerHTML = page
+            .map(
+              (r) => `
+          <tr>
+            <td style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.title || ""}">${r.title || "—"}</td>
+            <td>${typeLabel(r.type)}</td>
+            <td>${urgencyLabel(r.urgency)}</td>
+            <td>${statusBadge(r.status)}</td>
+            <td style="color:#94a3b8;white-space:nowrap;">${fmt(r.createdAt)}</td>
+            <td>
+              <button class="btn btn-primary btn-sm" onclick="openStatusModal('${r._id || r.id}', \`${(r.title || "").replace(/`/g, "'")}\`)">
+                تغيير الحالة
+              </button>
+            </td>
+          </tr>
+        `,
+            )
+            .join("");
+        }
+
+        // Pagination
+        const totalPages = Math.ceil(total / PAGE_SIZE);
+        const pagDiv = document.getElementById("paginationBtns");
+        let btns = "";
+        if (requestsPage > 1)
+          btns += `<button class="btn btn-outline btn-sm" onclick="goPage(${requestsPage - 1})">السابق</button>`;
+        btns += `<span style="padding:5px 12px;font-size:13px;color:#64748b;">${requestsPage} / ${totalPages || 1}</span>`;
+        if (requestsPage < totalPages)
+          btns += `<button class="btn btn-outline btn-sm" onclick="goPage(${requestsPage + 1})">التالي</button>`;
+        pagDiv.innerHTML = btns;
+      }
+
+      function goPage(n) {
+        requestsPage = n;
+        renderRequests();
+      }
+
+      // ── Status Modal ──
+      function openStatusModal(id, title) {
+        selectedRequestId = id;
+        document.getElementById("modalRequestTitle").textContent =
+          `الطلب: ${title}`;
+        document.getElementById("modalStatus").value = "";
+        document.getElementById("modalNote").value = "";
+        document.getElementById("statusModal").classList.remove("hidden");
+      }
+      function closeModal() {
+        document.getElementById("statusModal").classList.add("hidden");
+        selectedRequestId = null;
+      }
+
+      async function saveStatus() {
+        if (!selectedRequestId) return;
+        const status = document.getElementById("modalStatus").value;
+        const reviewNote = document.getElementById("modalNote").value.trim();
+        if (!status) {
+          toast("الرجاء اختيار الحالة.", "error");
+          return;
+        }
+
+        const btn = document.getElementById("modalSaveBtn");
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span>';
+
+        try {
+          await api(`/requests/${selectedRequestId}/status`, {
+            method: "PUT",
+            body: JSON.stringify({ status, reviewNote }),
+          });
+          toast("تم تحديث الحالة بنجاح.", "success");
+          closeModal();
+          loadRequests();
+        } catch (err) {
+          toast(err.message || "فشل تحديث الحالة.", "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "حفظ التغيير";
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      //  VOLUNTEERS
+      // ═══════════════════════════════════════════════════════════
+      async function loadVolunteers() {
+        const container = document.getElementById("volunteersContainer");
+        container.innerHTML = `<div style="text-align:center;padding:48px;color:#94a3b8;">جارٍ التحميل...</div>`;
+        const filterVal = document.getElementById("volunteerFilter").value;
+
+        try {
+          const data = await api(`/admin/volunteer-requests?limit=100`);
+          let volunteers = data?.data || [];
+
+          if (filterVal === "pending")
+            volunteers = volunteers.filter((v) => !v.isApproved);
+          if (filterVal === "approved")
+            volunteers = volunteers.filter((v) => v.isApproved);
+
+          if (!volunteers.length) {
+            container.innerHTML = `<div style="text-align:center;padding:48px;color:#94a3b8;">لا توجد طلبات متطوعين مطابقة.</div>`;
+            return;
+          }
+
+          container.innerHTML = `
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;padding:20px;">
+            ${volunteers.map((v) => volunteerCard(v)).join("")}
+          </div>
+        `;
+        } catch (err) {
+          container.innerHTML = `<div style="text-align:center;padding:48px;color:#dc2626;">${err.message}</div>`;
+        }
+      }
+
+      function volunteerCard(v) {
+        const u = v.user || {};
+        const specs =
+          Array.isArray(v.specializations) && v.specializations.length
+            ? v.specializations.join(" • ")
+            : "غير محدد";
+        const skills =
+          Array.isArray(v.skills) && v.skills.length
+            ? v.skills.join("، ")
+            : "—";
+        const avail =
+          {
+            "full-time": "تفرغ تام",
+            "part-time": "دوام جزئي",
+            weekends: "عطل نهاية الأسبوع",
+            flexible: "مرن",
+          }[v.availability] ||
+          v.availability ||
+          "—";
+
+        const approved = v.isApproved;
+        return `
+        <div style="background:#fff;border-radius:18px;border:1.5px solid ${approved ? "#D1FAE5" : "#EDE9FE"};padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.05);">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+            <div style="width:44px;height:44px;border-radius:12px;background:${approved ? "#D1FAE5" : "#EDE9FE"};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:${approved ? "#059669" : "#4C1D95"};flex-shrink:0;">
+              ${(u.name || "م")[0]}
+            </div>
+            <div style="overflow:hidden;">
+              <p style="margin:0;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.name || "—"}</p>
+              <p style="margin:0;font-size:11.5px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.email || "—"}</p>
+            </div>
+            <div style="margin-right:auto;">
+              ${
+                approved
+                  ? '<span class="badge badge-approved">✓ مقبول</span>'
+                  : '<span class="badge badge-pending">بانتظار الموافقة</span>'
+              }
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+            <div style="background:#f8fafc;border-radius:10px;padding:10px;">
+              <p style="margin:0;font-size:10.5px;color:#94a3b8;font-weight:600;">التخصص</p>
+              <p style="margin:4px 0 0;font-size:12.5px;color:#334155;font-weight:600;">${specs}</p>
+            </div>
+            <div style="background:#f8fafc;border-radius:10px;padding:10px;">
+              <p style="margin:0;font-size:10.5px;color:#94a3b8;font-weight:600;">التوفر</p>
+              <p style="margin:4px 0 0;font-size:12.5px;color:#334155;font-weight:600;">${avail}</p>
+            </div>
+          </div>
+          ${v.bio ? `<p style="margin:0 0 12px;font-size:12.5px;color:#64748b;line-height:1.6;border-right:3px solid #EDE9FE;padding-right:10px;">${v.bio}</p>` : ""}
+          <p style="margin:0 0 14px;font-size:12px;color:#94a3b8;">المهارات: ${skills}</p>
+          ${
+            !approved
+              ? `
           <div style="display:flex;gap:8px;">
-            <input id="jwtInput" type="text" placeholder="Bearer token…"
-                   style="flex:1;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:12px;" />
-            <button class="btn-outline" onclick="saveJwt()" style="white-space:nowrap;">حفظ</button>
+            <button class="btn btn-success btn-sm" style="flex:1;justify-content:center;" onclick="approveVolunteer('${v._id || v.id}')">✓ قبول</button>
+            <button class="btn btn-danger btn-sm" style="justify-content:center;padding:5px 14px;" onclick="rejectUser('${u._id || u.id}', '${u.name || "المتطوع"}')">✕ رفض</button>
           </div>
+          `
+              : `<p style="margin:0;font-size:11.5px;color:#64748b;">📅 انضم في: ${fmt(v.createdAt)}</p>`
+          }
         </div>
+      `;
+      }
 
-        <div id="loginError" style="display:none;background:#fde8e8;color:#991b1b;padding:10px 14px;border-radius:10px;font-size:13px;"></div>
-      </div>
-    </div>
+      async function approveVolunteer(volunteerId) {
+        try {
+          await api(`/volunteers/${volunteerId}/approve`, { method: "PUT" });
+          toast("تم قبول المتطوع بنجاح.", "success");
+          loadVolunteers();
+        } catch (err) {
+          toast(err.message || "فشلت عملية القبول.", "error");
+        }
+      }
 
-    <!-- ── DASHBOARD CONTENT (hidden until logged in) ── -->
-    <div id="dashContent" style="display:none;">
+      async function rejectUser(userId, name) {
+        if (!confirm(`هل أنت متأكد من رفض طلب ${name}؟`)) return;
+        try {
+          // Toggle active status
+          await api(`/admin/users/${userId}/toggle`, { method: "PUT" });
+          toast("تم رفض الطلب.", "success");
+          loadVolunteers();
+        } catch (err) {
+          toast(err.message || "فشل رفض الطلب.", "error");
+        }
+      }
 
-      <!-- ── OVERVIEW ── -->
-      <div id="sec-overview" class="section active">
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px;">
-          <div class="card" style="padding:20px;">
-            <div class="stat-label">إجمالي الطلاب</div>
-            <div class="stat-value" id="s-students">—</div>
-          </div>
-          <div class="card" style="padding:20px;">
-            <div class="stat-label">المتطوعون</div>
-            <div class="stat-value" id="s-volunteers">—</div>
-          </div>
-          <div class="card" style="padding:20px;">
-            <div class="stat-label">المتبرعون</div>
-            <div class="stat-value" id="s-donors">—</div>
-          </div>
-          <div class="card" style="padding:20px;">
-            <div class="stat-label">طلبات معلقة</div>
-            <div class="stat-value" id="s-pending">—</div>
-          </div>
-          <div class="card" style="padding:20px;">
-            <div class="stat-label">طلبات مكتملة</div>
-            <div class="stat-value" id="s-fulfilled">—</div>
-          </div>
-          <div class="card" style="padding:20px;">
-            <div class="stat-label">التبرعات ($)</div>
-            <div class="stat-value" id="s-donations">—</div>
-          </div>
-        </div>
+      // ═══════════════════════════════════════════════════════════
+      //  USERS (Students & Donors)
+      // ═══════════════════════════════════════════════════════════
+      async function loadUsers(role) {
+        const tbodyId =
+          role === "student" ? "studentsTableBody" : "donorsTableBody";
+        const tbody = document.getElementById(tbodyId);
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#94a3b8;">جارٍ التحميل...</td></tr>`;
 
-        <div class="card" style="padding:20px;">
-          <h3 style="font-size:15px;font-weight:700;margin:0 0 16px;">آخر 10 طلبات</h3>
-          <div style="overflow-x:auto;">
-            <table>
-              <thead><tr><th>العنوان</th><th>النوع</th><th>الحالة</th><th>الأولوية</th><th>التاريخ</th><th>إجراء</th></tr></thead>
-              <tbody id="recentRequestsBody"><tr><td colspan="6" style="text-align:center;padding:24px;color:#9ca3af;"><div class="spinner"></div></td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+        try {
+          const data = await api(`/admin/users?role=${role}&limit=100`);
+          const users = data?.data || [];
 
-      <!-- ── REQUESTS ── -->
-      <div id="sec-requests" class="section">
-        <div style="display:flex;gap:10px;margin-bottom:18px;">
-          <select id="filterStatus" onchange="loadRequests()" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
-            <option value="">كل الحالات</option>
-            <option value="pending">معلق</option>
-            <option value="approved">موافق</option>
-            <option value="in_progress">جارٍ</option>
-            <option value="fulfilled">مكتمل</option>
-            <option value="rejected">مرفوض</option>
-          </select>
-          <select id="filterType" onchange="loadRequests()" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
-            <option value="">كل الأنواع</option>
-            <option value="tutoring">دروس تطوعية</option>
-            <option value="psychological">دعم نفسي</option>
-            <option value="stationery">أدوات مدرسية</option>
-            <option value="clothes">زي مدرسي</option>
-            <option value="food">وجبات</option>
-            <option value="financial">مالي</option>
-          </select>
-          <button class="btn-outline" onclick="loadRequests()">🔄 تحديث</button>
-        </div>
-        <div class="card" style="padding:20px;overflow-x:auto;">
-          <table>
-            <thead><tr><th>العنوان</th><th>النوع</th><th>الحالة</th><th>الأولوية</th><th>التاريخ</th><th>تغيير الحالة</th></tr></thead>
-            <tbody id="requestsBody"><tr><td colspan="6" style="text-align:center;padding:24px;color:#9ca3af;"><div class="spinner"></div></td></tr></tbody>
-          </table>
-        </div>
-      </div>
+          if (!users.length) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#94a3b8;">لا يوجد ${role === "student" ? "طلاب" : "متبرعون"} حتى الآن.</td></tr>`;
+            return;
+          }
 
-      <!-- ── VOLUNTEERS ── -->
-      <div id="sec-volunteers" class="section">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-          <h3 style="font-size:15px;font-weight:700;margin:0;">طلبات التطوع</h3>
-          <button class="btn-outline" onclick="loadVolunteers()">🔄 تحديث</button>
-        </div>
-        <div id="volunteersBody">
-          <div style="text-align:center;padding:40px;"><div class="spinner"></div></div>
-        </div>
-      </div>
+          tbody.innerHTML = users
+            .map(
+              (u) => `
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:32px;height:32px;border-radius:9px;background:#EDE9FE;color:#4C1D95;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${(u.name || "?")[0]}</div>
+                <span style="font-weight:600;">${u.name || "—"}</span>
+              </div>
+            </td>
+            <td style="color:#64748b;">${u.email || "—"}</td>
+            <td style="color:#64748b;">${u.phone || "—"}</td>
+            <td>
+              ${
+                u.isActive
+                  ? '<span class="badge badge-approved">نشط</span>'
+                  : '<span class="badge badge-rejected">موقوف</span>'
+              }
+            </td>
+            <td style="color:#94a3b8;white-space:nowrap;">${fmt(u.createdAt)}</td>
+            <td>
+              <button class="btn btn-sm ${u.isActive ? "btn-danger" : "btn-success"}" onclick="toggleUser('${u._id || u.id}', ${!u.isActive})">
+                ${u.isActive ? "إيقاف" : "تفعيل"}
+              </button>
+            </td>
+          </tr>
+        `,
+            )
+            .join("");
+        } catch (err) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#dc2626;">${err.message}</td></tr>`;
+        }
+      }
 
-      <!-- ── PLEDGES ── -->
-      <div id="sec-pledges" class="section">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-          <h3 style="font-size:15px;font-weight:700;margin:0;">سجل التبرعات</h3>
-          <button class="btn-outline" onclick="loadPledges()">🔄 تحديث</button>
-        </div>
-        <div class="card" style="padding:20px;overflow-x:auto;">
-          <table>
-            <thead><tr><th>المتبرع</th><th>طريقة الدفع</th><th>المبلغ</th><th>الحالة</th><th>التاريخ</th></tr></thead>
-            <tbody id="pledgesBody"><tr><td colspan="5" style="text-align:center;padding:24px;color:#9ca3af;"><div class="spinner"></div></td></tr></tbody>
-          </table>
-        </div>
-      </div>
+      async function toggleUser(userId, activate) {
+        const action = activate ? "تفعيل" : "إيقاف";
+        if (!confirm(`هل أنت متأكد من ${action} هذا الحساب؟`)) return;
+        try {
+          await api(`/admin/users/${userId}/toggle`, { method: "PUT" });
+          toast(`تم ${action} الحساب بنجاح.`, "success");
+          loadSection(currentSection);
+        } catch (err) {
+          toast(err.message || `فشل ${action} الحساب.`, "error");
+        }
+      }
 
-      <!-- ── USERS ── -->
-      <div id="sec-users" class="section">
-        <div style="display:flex;gap:10px;margin-bottom:18px;">
-          <select id="filterRole" onchange="loadUsers()" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
-            <option value="">كل الأدوار</option>
-            <option value="student">طلاب</option>
-            <option value="volunteer">متطوعون</option>
-            <option value="donor">متبرعون</option>
-            <option value="admin">مشرفون</option>
-          </select>
-          <button class="btn-outline" onclick="loadUsers()">🔄 تحديث</button>
-        </div>
-        <div class="card" style="padding:20px;overflow-x:auto;">
-          <table>
-            <thead><tr><th>الاسم</th><th>البريد</th><th>الدور</th><th>موثّق</th><th>نشط</th><th>تاريخ التسجيل</th></tr></thead>
-            <tbody id="usersBody"><tr><td colspan="6" style="text-align:center;padding:24px;color:#9ca3af;"><div class="spinner"></div></td></tr></tbody>
-          </table>
-        </div>
-      </div>
+      // ═══════════════════════════════════════════════════════════
+      //  VOLUNTEER MODAL (detail view — kept for future use)
+      // ═══════════════════════════════════════════════════════════
+      function closeVolunteerModal() {
+        document.getElementById("volunteerModal").classList.add("hidden");
+      }
 
-    </div><!-- /dashContent -->
-  </main>
-</div>
+      // ═══════════════════════════════════════════════════════════
+      //  BOOTSTRAP
+      // ═══════════════════════════════════════════════════════════
+      (function init() {
+        if (AUTH_TOKEN) {
+          document.getElementById("loginOverlay").classList.add("hidden");
+          // Try to show stored user info
+          try {
+            const payload = JSON.parse(atob(AUTH_TOKEN.split(".")[1]));
+            // minimal — no personal data stored client-side beyond what's in the JWT
+          } catch (_) {}
+          loadSection("overview");
+        }
+      })();
 
-<script>
-const API = "https://c32f123d-d954-4621-9d77-eac0252166b3-00-vgqwdfdy9utr.pike.replit.dev/api";
-let TOKEN = localStorage.getItem("tamkeen_admin_token") || "";
-
-// ── HELPERS ─────────────────────────────────────────────────────────────────
-function toast(msg, ok = true) {
-  const el = document.getElementById("toastEl");
-  el.textContent = msg;
-  el.className = ok ? "toast-ok" : "toast-err";
-  el.style.display = "block";
-  setTimeout(() => { el.style.display = "none"; }, 3000);
-}
-
-function headers() {
-  return { "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN}` };
-}
-
-async function api(path, method = "GET", body = null) {
-  const opts = { method, headers: headers() };
-  if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(API + path, opts);
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data.message || r.statusText || "خطأ في الخادم");
-  return data;
-}
-
-function fmt(dateStr) {
-  if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleDateString("ar-EG", { day: "numeric", month: "short", year: "numeric" });
-}
-
-const TYPE_MAP = { tutoring:"دروس تطوعية", psychological:"دعم نفسي", stationery:"أدوات مدرسية",
-  clothes:"زي مدرسي", food:"وجبات", financial:"مالي", academic:"أكاديمي", housing:"سكن", other:"أخرى" };
-
-const STATUS_MAP = { pending:"معلق", under_review:"قيد المراجعة", approved:"موافق عليه",
-  in_progress:"جارٍ التنفيذ", fulfilled:"مكتمل", rejected:"مرفوض", closed:"مغلق" };
-
-function statusBadge(s) {
-  const map = { pending:"badge-pending", under_review:"badge-other", approved:"badge-approved",
-    in_progress:"badge-approved", fulfilled:"badge-fulfilled", rejected:"badge-rejected", closed:"badge-other" };
-  return `<span class="badge ${map[s]||'badge-other'}">${STATUS_MAP[s]||s}</span>`;
-}
-
-// ── AUTH ─────────────────────────────────────────────────────────────────────
-async function loginAdmin() {
-  const email = document.getElementById("loginEmail").value.trim();
-  const pw    = document.getElementById("loginPassword").value;
-  const errEl = document.getElementById("loginError");
-  const btn   = document.getElementById("loginBtn");
-
-  errEl.style.display = "none";
-  if (!email || !pw) { errEl.textContent = "الرجاء إدخال البريد وكلمة المرور."; errEl.style.display = "block"; return; }
-
-  btn.textContent = "جارٍ الدخول…";
-  btn.disabled = true;
-
-  try {
-    const res = await fetch(API + "/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password: pw })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "فشل تسجيل الدخول");
-
-    if (data.user?.role !== "admin") throw new Error("هذا الحساب ليس حساب مشرف.");
-
-    TOKEN = data.token;
-    localStorage.setItem("tamkeen_admin_token", TOKEN);
-    showDashboard(data.user);
-    toast("تم تسجيل الدخول بنجاح ✓");
-  } catch (e) {
-    errEl.textContent = e.message;
-    errEl.style.display = "block";
-  } finally {
-    btn.textContent = "دخول";
-    btn.disabled = false;
-  }
-}
-
-function saveJwt() {
-  const v = document.getElementById("jwtInput").value.trim();
-  if (!v) return;
-  TOKEN = v;
-  localStorage.setItem("tamkeen_admin_token", TOKEN);
-  toast("تم حفظ التوكن ✓");
-  verifyToken();
-}
-
-async function verifyToken() {
-  if (!TOKEN) return;
-  try {
-    const me = await api("/auth/me");
-    const user = me.data;
-    showDashboard(user);
-  } catch {
-    TOKEN = "";
-    localStorage.removeItem("tamkeen_admin_token");
-  }
-}
-
-function showDashboard(user) {
-  document.getElementById("loginPanel").style.display  = "none";
-  document.getElementById("dashContent").style.display = "block";
-  document.getElementById("loggedInUser").textContent  = `${user?.name || "مشرف"} — ${user?.email || ""}`;
-  checkDbStatus();
-  loadOverview();
-}
-
-function doLogout() {
-  TOKEN = "";
-  localStorage.removeItem("tamkeen_admin_token");
-  document.getElementById("loginPanel").style.display  = "block";
-  document.getElementById("dashContent").style.display = "none";
-  document.getElementById("loggedInUser").textContent  = "غير مسجّل";
-  toast("تم تسجيل الخروج");
-}
-
-// ── NAVIGATION ───────────────────────────────────────────────────────────────
-function showSection(name, el) {
-  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-  document.querySelectorAll(".nav-link").forEach(a => a.classList.remove("active"));
-  document.getElementById("sec-" + name).classList.add("active");
-  el.classList.add("active");
-
-  if (name === "requests")   loadRequests();
-  if (name === "volunteers") loadVolunteers();
-  if (name === "pledges")    loadPledges();
-  if (name === "users")      loadUsers();
-}
-
-// ── DB STATUS ────────────────────────────────────────────────────────────────
-async function checkDbStatus() {
-  const dot = document.getElementById("dbDot");
-  const lbl = document.getElementById("dbLabel");
-  try {
-    const h = await fetch(API.replace("/api","") + "/api/health");
-    const d = await h.json();
-    const ok = d?.db === "connected";
-    dot.className = "db-status " + (ok ? "db-ok" : "db-err");
-    lbl.textContent = ok ? "متصلة" : "منقطعة";
-  } catch {
-    dot.className = "db-status db-err";
-    lbl.textContent = "خطأ";
-  }
-}
-
-// ── OVERVIEW ────────────────────────────────────────────────────────────────
-async function loadOverview() {
-  try {
-    const d = await api("/admin/dashboard");
-    const s = d.data.stats;
-    document.getElementById("s-students").textContent   = s.totalStudents  || 0;
-    document.getElementById("s-volunteers").textContent = s.totalVolunteers || 0;
-    document.getElementById("s-donors").textContent     = s.totalDonors    || 0;
-    document.getElementById("s-pending").textContent    = s.pendingRequests || 0;
-    document.getElementById("s-fulfilled").textContent  = s.fulfilledRequests || 0;
-    document.getElementById("s-donations").textContent  = "$" + Number(s.totalDonationsAmount || 0).toLocaleString();
-
-    const rows = (d.data.recentRequests || []).map(r => `
-      <tr>
-        <td>${r.title || "—"}</td>
-        <td>${TYPE_MAP[r.type] || r.type}</td>
-        <td>${statusBadge(r.status)}</td>
-        <td><span class="badge ${r.urgency === 'high' || r.urgency === 'critical' ? 'badge-rejected' : 'badge-other'}">${r.urgency || "—"}</span></td>
-        <td>${fmt(r.createdAt)}</td>
-        <td>
-          <select onchange="changeStatus('${r._id}', this.value)" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">
-            <option value="">—</option>
-            <option value="approved">موافق</option>
-            <option value="in_progress">جارٍ</option>
-            <option value="fulfilled">مكتمل</option>
-            <option value="rejected">مرفوض</option>
-          </select>
-        </td>
-      </tr>`).join("");
-    document.getElementById("recentRequestsBody").innerHTML = rows || '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:20px;">لا توجد طلبات</td></tr>';
-  } catch (e) {
-    document.getElementById("recentRequestsBody").innerHTML = `<tr><td colspan="6" style="color:#b91c1c;padding:16px;">${e.message}</td></tr>`;
-  }
-}
-
-// ── REQUESTS ────────────────────────────────────────────────────────────────
-async function loadRequests() {
-  const status = document.getElementById("filterStatus").value;
-  const type   = document.getElementById("filterType").value;
-  const tbody  = document.getElementById("requestsBody");
-  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;"><div class="spinner"></div></td></tr>';
-
-  try {
-    let path = "/admin/requests?limit=50";
-    if (status) path += "&status=" + status;
-    if (type)   path += "&type="   + type;
-    const d = await api(path);
-    const rows = (d.data || []).map(r => `
-      <tr>
-        <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.title}</td>
-        <td>${TYPE_MAP[r.type] || r.type}</td>
-        <td>${statusBadge(r.status)}</td>
-        <td><span class="badge ${r.urgency === 'high' || r.urgency === 'critical' ? 'badge-rejected' : 'badge-other'}">${r.urgency}</span></td>
-        <td style="white-space:nowrap;">${fmt(r.createdAt)}</td>
-        <td>
-          <select onchange="changeStatus('${r._id}', this.value)" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">
-            <option value="">تغيير</option>
-            <option value="approved">موافق</option>
-            <option value="in_progress">جارٍ</option>
-            <option value="fulfilled">مكتمل</option>
-            <option value="rejected">مرفوض</option>
-          </select>
-        </td>
-      </tr>`).join("");
-    tbody.innerHTML = rows || '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:20px;">لا توجد نتائج</td></tr>';
-  } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="6" style="color:#b91c1c;padding:16px;">${e.message}</td></tr>`;
-  }
-}
-
-async function changeStatus(id, status) {
-  if (!status) return;
-  try {
-    await api("/admin/requests/" + id + "/status", "PUT", { status });
-    toast("تم تحديث حالة الطلب ✓");
-    loadOverview();
-    if (document.getElementById("sec-requests").classList.contains("active")) loadRequests();
-  } catch (e) {
-    toast(e.message, false);
-  }
-}
-
-// ── VOLUNTEERS ───────────────────────────────────────────────────────────────
-async function loadVolunteers() {
-  const cont = document.getElementById("volunteersBody");
-  cont.innerHTML = '<div style="text-align:center;padding:40px;"><div class="spinner"></div></div>';
-  try {
-    const d = await api("/admin/volunteer-requests?limit=50");
-    if (!d.data?.length) { cont.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;">لا توجد طلبات تطوع.</div>'; return; }
-
-    cont.innerHTML = d.data.map(v => `
-      <div class="card" style="padding:18px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-        <div>
-          <p style="font-weight:700;margin:0;font-size:15px;">${v.user?.name || v.user?.email || "متطوع"}</p>
-          <p style="font-size:13px;color:#6b7280;margin:4px 0 0;">${(v.specializations||[]).join(" • ") || "—"}</p>
-          <p style="font-size:12px;color:#9ca3af;margin:2px 0 0;">مهارات: ${(v.skills||[]).join(", ") || "—"} &nbsp;|&nbsp; ${v.availability||"—"}</p>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span class="badge ${v.isApproved ? 'badge-fulfilled' : 'badge-pending'}">${v.isApproved ? "معتمد" : "بانتظار الموافقة"}</span>
-          ${!v.isApproved ? `<button class="btn-approve" onclick="approveVolunteer('${v._id}',true)">موافقة</button>` : ""}
-          <button class="btn-reject" onclick="approveVolunteer('${v._id}',false)">رفض</button>
-        </div>
-      </div>`).join("");
-  } catch (e) {
-    cont.innerHTML = `<div style="color:#b91c1c;padding:16px;">${e.message}</div>`;
-  }
-}
-
-async function approveVolunteer(id, approve) {
-  try {
-    await api("/admin/volunteers/" + id + "/" + (approve ? "approve" : "reject"), "PUT");
-    toast(approve ? "تم قبول المتطوع ✓" : "تم رفض المتطوع");
-    loadVolunteers();
-  } catch (e) { toast(e.message, false); }
-}
-
-// ── PLEDGES ──────────────────────────────────────────────────────────────────
-async function loadPledges() {
-  const tbody = document.getElementById("pledgesBody");
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;"><div class="spinner"></div></td></tr>';
-  try {
-    const d = await api("/admin/pledges?limit=50");
-    const rows = (d.data || []).map(p => `
-      <tr>
-        <td>${p.donor?.name || p.donor?.email || "مجهول"}</td>
-        <td>${p.pledgeType || "—"}</td>
-        <td>${p.amount ? "$" + p.amount.toLocaleString() : "عيني"}</td>
-        <td>${statusBadge(p.status || "pending")}</td>
-        <td>${fmt(p.createdAt)}</td>
-      </tr>`).join("");
-    tbody.innerHTML = rows || '<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:20px;">لا توجد تبرعات مسجلة بعد.</td></tr>';
-  } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="5" style="color:#b91c1c;padding:16px;">${e.message}</td></tr>`;
-  }
-}
-
-// ── USERS ────────────────────────────────────────────────────────────────────
-async function loadUsers() {
-  const role  = document.getElementById("filterRole").value;
-  const tbody = document.getElementById("usersBody");
-  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;"><div class="spinner"></div></td></tr>';
-  try {
-    let path = "/admin/users?limit=100";
-    if (role) path += "&role=" + role;
-    const d = await api(path);
-    const rows = (d.data || []).map(u => `
-      <tr>
-        <td style="font-weight:600;">${u.name || "—"}</td>
-        <td style="color:#6b7280;">${u.email}</td>
-        <td>${u.role}</td>
-        <td>${u.isVerified ? '<span class="badge badge-fulfilled">نعم</span>' : '<span class="badge badge-pending">لا</span>'}</td>
-        <td>${u.isActive ? '<span class="badge badge-fulfilled">نشط</span>' : '<span class="badge badge-rejected">موقوف</span>'}</td>
-        <td style="color:#9ca3af;">${fmt(u.createdAt)}</td>
-      </tr>`).join("");
-    tbody.innerHTML = rows || '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:20px;">لا توجد نتائج</td></tr>';
-  } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="6" style="color:#b91c1c;padding:16px;">${e.message}</td></tr>`;
-  }
-}
-
-// ── INIT ─────────────────────────────────────────────────────────────────────
-window.addEventListener("DOMContentLoaded", () => {
-  if (TOKEN) verifyToken();
-  document.getElementById("loginEmail").addEventListener("keydown", e => { if (e.key === "Enter") loginAdmin(); });
-  document.getElementById("loginPassword").addEventListener("keydown", e => { if (e.key === "Enter") loginAdmin(); });
-});
-</script>
-</body>
+      // Close modals on backdrop click
+      document
+        .getElementById("statusModal")
+        .addEventListener("click", function (e) {
+          if (e.target === this) closeModal();
+        });
+      document
+        .getElementById("volunteerModal")
+        .addEventListener("click", function (e) {
+          if (e.target === this) closeVolunteerModal();
+        });
+    </script>
+  </body>
 </html>
