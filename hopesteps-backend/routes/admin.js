@@ -186,6 +186,23 @@ router.get("/requests", async (req, res) => {
     res.status(500).json({ status: "error", message: err.message });
   }
 });
+// ─── PUT /api/admin/users/:id/toggle ─────────────────────────────────────────
+router.put("/users/:id/toggle", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user)
+      return res
+        .status(404)
+        .json({ status: "error", message: "المستخدم غير موجود" });
+
+    user.isActive = !user.isActive;
+    await user.save({ validateBeforeSave: false });
+
+    res.json({ status: "success", data: user });
+  } catch (err) {
+    res.status(400).json({ status: "error", message: err.message });
+  }
+});
 
 // ─── PUT /api/admin/requests/:id/status ──────────────────────────────────────
 router.put("/requests/:id/status", async (req, res) => {
