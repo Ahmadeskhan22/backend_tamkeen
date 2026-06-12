@@ -25,6 +25,7 @@ const donorRoutes = require("./hopesteps-backend/routes/donors");
 const requestRoutes = require("./hopesteps-backend/routes/requests");
 const adminRoutes = require("./hopesteps-backend/routes/admin");
 const notificationRoutes = require("./hopesteps-backend/routes/notifications");
+const schoolRoutes = require("./hopesteps-backend/routes/schools");
 const app = express();
 app.set("trust proxy", 1);
 // ─── Security ─────────────────────────────────────────────────────────────
@@ -122,6 +123,7 @@ app.use("/api/donors", donorRoutes);
 app.use("/api/requests", requestRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/schools", schoolRoutes);
 
 // Serve admin dashboard HTML from server root at /admin
 app.get("/admin", (req, res) => {
