@@ -41,7 +41,8 @@ const registerValidation = [
     .withMessage(
       "كلمة السر ضعيفة! يجب أن تحتوي على 8 خانات، حرف كبير، حرف صغير، رقم، ورمز خاص (@#$)",
     ),
-  body("role").isIn(["student", "volunteer", "donor"]),
+body("role").isIn(["student", "volunteer", "donor", "school"]),
+
 ];
 // @route  POST /api/auth/register
 // @desc   Register new user

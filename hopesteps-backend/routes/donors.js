@@ -40,7 +40,7 @@ router.post("/pledge", protect, authorize("donor"), async (req, res) => {
 
     res.status(200).json({
       status: "success",
-      message: `تم تسجيل رغبتك بـ (${pledgeType}) بنجاح! 🌟`,
+      message: `تم تسجيل رغبتك بـ (${pledgeType}) بنجاح! سيتواصل معك فريقنا قريباً لتنسيق التفاصيل.`,
     });
   } catch (err) {
     console.error("🔥 خطأ في تسجيل التبرع:", err);
@@ -159,7 +159,6 @@ router.post(
           .status(404)
           .json({ status: "error", message: "Donor profile not found" });
 
-      // تسجيل التبرع
       donor.donations.push({
         amount,
         currency,
@@ -172,7 +171,6 @@ router.post(
       donor.totalDonated += amount;
       await donor.save();
 
-      // تحديث المبلغ المجموع للطلب
       request.amountRaised = (request.amountRaised || 0) + amount;
       if (request.amountRaised >= request.amountNeeded) {
         request.status = "fulfilled";
