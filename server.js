@@ -29,8 +29,21 @@ const schoolRoutes = require("./hopesteps-backend/routes/schools");
 const app = express();
 app.set("trust proxy", 1);
 // ─── Security ─────────────────────────────────────────────────────────────
+// ─── Security ─────────────────────────────────────────────────────────────
 app.use(
-  helmet({ contentSecurityPolicy: process.env.NODE_ENV === "production" }),
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com"],
+        scriptSrcAttr: ["'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "*"],
+      },
+    },
+  }),
 );
 
 // ─── CORS ─────────────────────────────────────────────────────────────────
