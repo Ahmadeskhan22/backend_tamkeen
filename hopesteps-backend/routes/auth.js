@@ -44,7 +44,6 @@ const registerValidation = [
 body("role").isIn(["student", "volunteer", "donor", "school"]),
 
 ];
-// @route  POST /api/auth/register
 // @desc   Register new user
 // @access Public
 // router.post("/register", registerValidation, async (req, res) => {
