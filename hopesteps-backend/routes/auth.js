@@ -4,6 +4,7 @@ const { body, validationResult } = require("express-validator");
 const User = require("../models/User");
 const Student = require("../models/Student");
 const Volunteer = require("../models/Volunteer");
+const School = require("../models/School");
 const Donor = require("../models/Donor");
 const { protect } = require("../middleware/auth");
 const nodemailer = require("nodemailer");
@@ -131,10 +132,10 @@ router.post("/register", registerValidation, async (req, res, next) => {
 
     const user = await User.create({ name, email, password, role, phone });
 
-    // إنشاء بروفايل حسب النوع (طالب، متطوع، متبرع)
     if (role === "student") await Student.create({ user: user._id });
     else if (role === "volunteer") await Volunteer.create({ user: user._id });
     else if (role === "donor") await Donor.create({ user: user._id });
+    else if (role === "school") await School.create({ user: user._id });
 
     sendTokenResponse(user, 201, res);
   } catch (err) {
