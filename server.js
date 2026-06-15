@@ -238,6 +238,16 @@ const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`📍 Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`🌐 API: http://localhost:${PORT}/api`);
   console.log(`🔓 CORS: all origins allowed`);
+setInterval(() => {
+    // ⚠️ استبدل الرابط أدناه برابط Replit القديم المربوط بتطبيق الوزارة
+    fetch("https://backendtamkeen--ahmadmohmmafam4.replit.app") 
+      .then(() => console.log("⏰ تم إرسال نبضة إنعاش بنجاح إلى Replit"))
+      .catch((err) => console.log("⚠️ خطأ مؤقت في الاتصال بـ Replit ولكن المحاولة مستمرة"));
+  }, 4 * 60 * 1000);
+
+
+
+
 });
 
 // ─── Socket.IO ─────────────────────────────────────────────────────────────
